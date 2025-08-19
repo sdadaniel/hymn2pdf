@@ -1,19 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import DownloadButtons from '@/components/DownloadButtons';
 import HymnInput from '@/components/HymnInput';
 import HymnList from '@/components/HymnList';
-import DownloadButtons from '@/components/DownloadButtons';
 import { HymnItem } from '@/types/hymn';
+import { useState } from 'react';
 
 export default function Home() {
   const [hymns, setHymns] = useState<HymnItem[]>([]);
 
   const addHymn = (hymnNumber: number) => {
+    // 이미 존재하는 번호인지 확인
+    if (hymns.some(hymn => hymn.number === hymnNumber)) {
+      alert(`찬미가 ${hymnNumber}장은 이미 추가되어 있습니다.`);
+      return;
+    }
+    
     const newHymn: HymnItem = {
       id: Date.now().toString(),
       number: hymnNumber,
-      imageUrl: `https://www.adventist.or.kr/data/hymnal/NOTE_2016/${hymnNumber}.gif`,
+      imageUrl: `https://www.adventist.or.kr/data/hymnal/NOTE_2016/${hymnNumber.toString().padStart(3, '0')}.gif`,
     };
     setHymns([...hymns, newHymn]);
   };

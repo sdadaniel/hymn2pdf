@@ -34,11 +34,137 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
     }
   };
 
+    // 공통 이미지 처리 함수
+  const processImage = async (blob: Blob) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = URL.createObjectURL(blob);
+    });
+
+    // Canvas 크기 설정
+    canvas.width = img.width;
+    canvas.height = img.height;
+    
+    // 배경색 설정 (흰색)
+    if (ctx) {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    // 이미지를 Canvas에 그리기
+    ctx?.drawImage(img, 0, 0);
+
+    // 색상 보정을 위한 필터 적용
+    const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height);
+    if (imageData) {
+      const data = imageData.data;
+      // 색상 반전 문제 해결을 위한 보정
+      for (let i = 0; i < data.length; i += 4) {
+        // RGB 값이 모두 0에 가까우면 검은색으로, 255에 가까우면 흰색으로 처리
+        if (data[i] < 50 && data[i + 1] < 50 && data[i + 2] < 50) {
+          data[i] = 0;     // R
+          data[i + 1] = 0; // G
+          data[i + 2] = 0; // B
+        } else if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) {
+          data[i] = 255;     // R
+          data[i + 1] = 255; // G
+          data[i + 2] = 255; // B
+        }
+      }
+      ctx?.putImageData(imageData, 0, 0);
+    }
+
+    // 메모리 정리
+    URL.revokeObjectURL(img.src);
+    
+    return { canvas, img };
+  };
+
+  // 공통 이미지 분할 함수
+  const splitImageForPDF = async (img: HTMLImageElement, imgWidth: number, margin: number, contentHeight: number, pageHeight: number, hymnNumber: number) => {
+    const isLongScore = img.height > 800; // 원본 이미지 높이가 800px 이상이면 긴 악보
+    
+    if (isLongScore) {
+      // 악보 시스템 수 계산 (8줄 또는 12줄)
+      const totalSystems = img.height > 1200 ? 12 : 8; // 1200px 이상이면 12줄, 아니면 8줄
+      const systemHeight = img.height / totalSystems; // 시스템당 높이
+      const systemsPerPage = 4; // 페이지당 4줄씩
+      const totalPages = Math.ceil(totalSystems / systemsPerPage); // 총 페이지 수
+      
+      console.log(`악보 정보: 총 ${totalSystems}줄, ${totalPages}페이지, 시스템 높이: ${systemHeight}px`);
+      
+      const pages = [];
+      
+      // 각 페이지별로 처리
+      for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+        const startSystem = pageNum * systemsPerPage;
+        const endSystem = Math.min(startSystem + systemsPerPage, totalSystems);
+        const partHeight = (endSystem - startSystem) * systemHeight;
+        
+        // 해당 부분의 Canvas 생성
+        const partCanvas = document.createElement('canvas');
+        const partCtx = partCanvas.getContext('2d');
+        partCanvas.width = img.width;
+        partCanvas.height = partHeight;
+        
+        if (partCtx) {
+          partCtx.fillStyle = 'white'; // 흰색 배경
+          partCtx.fillRect(0, 0, partCanvas.width, partCanvas.height);
+          partCtx.drawImage(
+            img, 
+            0, startSystem * systemHeight, img.width, partHeight, 
+            0, 0, partCanvas.width, partCanvas.height
+          );
+        }
+        
+        const partBase64 = partCanvas.toDataURL('image/png');
+        const partImgHeight = (partHeight * imgWidth) / img.width;
+        const partY = margin + (contentHeight - partImgHeight) / 2;
+        
+        pages.push({
+          base64: partBase64,
+          width: imgWidth,
+          height: partImgHeight,
+          y: partY,
+          pageNumber: pageNum + 1,
+          totalPages,
+          canvas: partCanvas
+        });
+      }
+      
+      return { isLongScore, pages };
+    } else {
+      // 짧은 악보는 1장에 그대로 추가
+      const finalImgHeight = (img.height * imgWidth) / img.width;
+      const y = margin + (contentHeight - finalImgHeight) / 2;
+      
+      return { 
+        isLongScore, 
+        pages: [{
+          base64: null, // 원본 이미지 사용
+          width: imgWidth,
+          height: finalImgHeight,
+          y: y,
+          pageNumber: 1,
+          totalPages: 1,
+          canvas: null
+        }]
+      };
+    }
+  };
+
   const downloadImage = async (url: string, filename: string) => {
     try {
       console.log('Downloading image:', url);
       
-      const response = await fetch(url, {
+      // 프록시를 통해 이미지 다운로드
+      const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl, {
         method: 'GET',
         cache: 'no-cache',
       });
@@ -53,15 +179,67 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
         throw new Error('Downloaded image is empty');
       }
       
-      console.log(`Successfully downloaded ${filename}, size: ${blob.size} bytes`);
+      // 공통 이미지 처리 함수 사용
+      const { canvas, img } = await processImage(blob);
       
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
+      // 악보 분할 처리
+      const { isLongScore, pages } = await splitImageForPDF(img, 800, 20, 600, 800, 0); // 임시 값들
+      
+      if (isLongScore) {
+        // 긴 악보는 각 페이지별로 JPG로 변환하여 다운로드
+        for (let i = 0; i < pages.length; i++) {
+          const page = pages[i];
+          const pageCanvas = page.canvas;
+          
+          if (pageCanvas) {
+            // Canvas를 JPG로 변환 (품질 0.9로 설정)
+            const jpgBlob = await new Promise<Blob>((resolve) => {
+              pageCanvas.toBlob((blob) => {
+                resolve(blob!);
+              }, 'image/jpeg', 0.9);
+            });
+            
+            // JPG 파일명으로 변경 (페이지 번호 포함)
+            const jpgFilename = filename.replace('.gif', `_page${page.pageNumber}.jpg`);
+            
+            console.log(`Successfully converted and downloaded ${jpgFilename}, size: ${jpgBlob.size} bytes`);
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(jpgBlob);
+            link.download = jpgFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            
+            // 메모리 정리
+            pageCanvas.remove();
+          }
+        }
+      } else {
+        // 짧은 악보는 1장으로 JPG 변환하여 다운로드
+        const jpgBlob = await new Promise<Blob>((resolve) => {
+          canvas.toBlob((blob) => {
+            resolve(blob!);
+          }, 'image/jpeg', 0.9);
+        });
+        
+        // JPG 파일명으로 변경
+        const jpgFilename = filename.replace('.gif', '.jpg');
+        
+        console.log(`Successfully converted and downloaded ${jpgFilename}, size: ${jpgBlob.size} bytes`);
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(jpgBlob);
+        link.download = jpgFilename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      }
+      
+      // 메모리 정리
+      canvas.remove();
     } catch (error) {
       console.error(`이미지 다운로드 실패 (${filename}):`, error);
       alert(`이미지 다운로드 실패: ${filename}\n\n오류: ${error instanceof Error ? error.message : String(error)}`);
@@ -88,7 +266,9 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
         try {
           console.log(`PDF: Downloading hymn ${hymn.number}:`, hymn.imageUrl);
           
-          const response = await fetch(hymn.imageUrl, {
+          // 프록시를 통해 이미지 다운로드
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(hymn.imageUrl)}`;
+          const response = await fetch(proxyUrl, {
             method: 'GET',
             cache: 'no-cache',
           });
@@ -103,47 +283,59 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
             throw new Error('Downloaded image is empty');
           }
           
-          // blob을 base64로 변환
-          const base64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
-
-          // 이미지 크기 계산
-          const img = new Image();
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = base64;
-          });
-
-          // PDF에 맞게 이미지 크기 조정
-          let imgWidth = contentWidth;
-          let imgHeight = (img.height * imgWidth) / img.width;
+          // 공통 이미지 처리 함수 사용
+          const { canvas, img } = await processImage(blob);
           
-          if (imgHeight > contentHeight) {
-            const scale = contentHeight / imgHeight;
-            imgWidth = imgWidth * scale;
-            imgHeight = contentHeight;
+          // 공통 이미지 분할 함수 사용
+          const { isLongScore, pages } = await splitImageForPDF(img, contentWidth, margin, contentHeight, pageHeight, hymn.number);
+          
+          if (isLongScore) {
+            // 긴 악보는 각 페이지별로 PDF에 추가
+            for (let i = 0; i < pages.length; i++) {
+              const page = pages[i];
+              
+              if (page.base64) {
+                pdf.addImage(page.base64, 'PNG', margin, page.y, page.width, page.height);
+              }
+              
+              // 페이지 번호 추가
+              pdf.setFontSize(12);
+              pdf.setTextColor(100);
+              if (page.totalPages > 1) {
+                pdf.text(`Hymn ${hymn.number} - Page ${page.pageNumber}`, margin, pageHeight - 10);
+              } else {
+                pdf.text(`Hymn ${hymn.number}`, margin, pageHeight - 10);
+              }
+              
+              // 마지막 페이지가 아니면 새 페이지 추가
+              if (i < pages.length - 1) {
+                pdf.addPage();
+              }
+              
+              // 메모리 정리
+              if (page.canvas) {
+                page.canvas.remove();
+              }
+            }
+          } else {
+            // 짧은 악보는 1장에 그대로 추가
+            const correctedBase64 = canvas.toDataURL('image/png');
+            pdf.addImage(correctedBase64, 'PNG', margin, pages[0].y, pages[0].width, pages[0].height);
+            
+            // 페이지 번호 추가
+            pdf.setFontSize(12);
+            pdf.setTextColor(100);
+            pdf.text(`Hymn ${hymn.number}`, margin, pageHeight - 10);
           }
-
-          // 이미지 중앙 정렬
-          const x = margin + (contentWidth - imgWidth) / 2;
-          const y = margin + (contentHeight - imgHeight) / 2;
-
-          // PDF에 이미지 추가
-          pdf.addImage(base64, 'GIF', x, y, imgWidth, imgHeight);
-
-          // 페이지 번호 추가
-          pdf.setFontSize(12);
-          pdf.setTextColor(100);
-          pdf.text(`찬미가 ${hymn.number}장`, margin, pageHeight - 10);
+          
+          // 메모리 정리
+          canvas.remove();
 
           console.log(`Successfully added hymn ${hymn.number} to PDF`);
 
-          // 마지막 페이지가 아니면 새 페이지 추가
-          if (i < hymns.length - 1) {
+          // 마지막 찬미가가 아니면 새 페이지 추가
+          // 긴 악보는 이미 2장으로 나누어져서 새 페이지가 추가되었으므로 추가로 페이지를 만들지 않음
+          if (i < hymns.length - 1 && !isLongScore) {
             pdf.addPage();
           }
         } catch (error) {
@@ -227,15 +419,15 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
         </button>
       </div>
 
-      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-        <h3 className="font-medium text-blue-800 mb-2">다운로드 안내</h3>
-        <ul className="text-sm text-blue-700 space-y-1">
-          <li>• <strong>이미지 다운로드</strong>: 각 찬미가를 개별 GIF 파일로 다운로드</li>
-          <li>• <strong>PDF 다운로드</strong>: 모든 찬미가를 순서대로 하나의 PDF 파일로 생성</li>
-          <li>• 찬미가 순서는 위 목록의 순서를 따릅니다</li>
-          <li>• 이제 직접 이미지 파일을 가져와서 더 안정적으로 작동합니다</li>
-        </ul>
-      </div>
+             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+         <h3 className="font-medium text-blue-800 mb-2">다운로드 안내</h3>
+         <ul className="text-sm text-blue-700 space-y-1">
+           <li>• <strong>이미지 다운로드</strong>: 각 찬미가를 개별 JPG 파일로 다운로드 (긴 악보는 자동으로 페이지별 분할)</li>
+           <li>• <strong>PDF 다운로드</strong>: 모든 찬미가를 순서대로 하나의 PDF 파일로 생성 (긴 악보는 자동으로 페이지별 분할)</li>
+           <li>• 찬미가 순서는 위 목록의 순서를 따릅니다</li>
+           <li>• 8줄 악보는 4줄씩 2장, 12줄 악보는 4줄씩 3장으로 자동 분할됩니다</li>
+         </ul>
+       </div>
     </div>
   );
 } 

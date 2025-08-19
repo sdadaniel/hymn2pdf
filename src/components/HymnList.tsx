@@ -1,26 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { HymnItem } from '@/types/hymn';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  useSortable,
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { HymnItem } from '@/types/hymn';
 
 interface HymnListProps {
   hymns: HymnItem[];
@@ -53,22 +50,27 @@ function SortableHymnItem({ hymn, onRemove }: SortableHymnItemProps) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg cursor-move hover:bg-gray-100 transition-colors"
+      className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
     >
-      <div className="flex items-center gap-4">
-        <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
-          {hymn.number}
-        </div>
-        <div>
-          <p className="font-medium text-gray-800">찬미가 {hymn.number}장</p>
-          <p className="text-sm text-gray-500">드래그하여 순서 조정</p>
-        </div>
+      <div 
+        {...attributes}
+        {...listeners}
+        className="flex items-center gap-4 cursor-move flex-1"
+      >
+                 <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold text-xs">
+           {hymn.number}
+         </div>
+                  <div>
+            <p className="font-medium text-gray-800">찬미가 {hymn.number}장</p>
+            <p className="text-sm text-gray-500">드래그하여 순서 조정</p>
+          </div>
       </div>
       <button
-        onClick={() => onRemove(hymn.id)}
-        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(hymn.id);
+        }}
+        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
         title="제거"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
