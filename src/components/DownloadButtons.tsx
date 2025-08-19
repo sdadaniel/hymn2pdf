@@ -8,6 +8,8 @@ interface DownloadButtonsProps {
   hymns: HymnItem[];
 }
 
+const UNIT_PAGE_HEIGHT = 2000;
+
 export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -87,11 +89,11 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
 
   // 공통 이미지 분할 함수
   const splitImageForPDF = async (img: HTMLImageElement, imgWidth: number, margin: number, contentHeight: number, pageHeight: number, hymnNumber: number) => {
-    const isLongScore = img.height > 800; // 원본 이미지 높이가 800px 이상이면 긴 악보
+    const isLongScore = img.height > UNIT_PAGE_HEIGHT; // 원본 이미지 높이가 800px 이상이면 긴 악보
     
     if (isLongScore) {
       // 악보 시스템 수 계산 (8줄 또는 12줄)
-      const totalSystems = img.height > 1200 ? 12 : 8; // 1200px 이상이면 12줄, 아니면 8줄
+      const totalSystems = img.height > UNIT_PAGE_HEIGHT*2 ? 12 : 8; // 1200px 이상이면 12줄, 아니면 8줄
       const systemHeight = img.height / totalSystems; // 시스템당 높이
       const systemsPerPage = 4; // 페이지당 4줄씩
       const totalPages = Math.ceil(totalSystems / systemsPerPage); // 총 페이지 수
