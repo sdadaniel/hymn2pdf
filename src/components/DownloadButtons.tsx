@@ -8,26 +8,42 @@ interface DownloadButtonsProps {
   hymns: HymnItem[];
 }
 
+// 상수 정의
 const UNIT_PAGE_HEIGHT = 2000;
+const IMAGE_QUALITY = 0.1; // 이미지 품질 (0.1 ~ 1.0, 낮을수록 용량 절약)
+const DOWNLOAD_DELAY = 500; // 다운로드 간격 (ms)
+const SYSTEMS_PER_PAGE = 4; // 페이지당 악보 시스템 수
+const LONG_SCORE_THRESHOLD = 1200; // 12줄 악보 판단 기준
+const IMAGE_DOWNLOAD_WIDTH = 800; // 이미지 다운로드 시 너비
+const IMAGE_DOWNLOAD_MARGIN = 20; // 이미지 다운로드 시 여백
+const IMAGE_DOWNLOAD_HEIGHT = 600; // 이미지 다운로드 시 높이
+const PDF_MARGIN = 20; // PDF 여백 (mm)
+const PDF_FONT_SIZE = 12; // PDF 폰트 크기
+const PDF_FONT_COLOR = 100; // PDF 폰트 색상
+const ERROR_FONT_SIZE = 16; // 오류 메시지 폰트 크기
+const ERROR_FONT_COLOR = 200; // 오류 메시지 폰트 색상
 
 export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const downloadImages = async () => {
+    const downloadImages = async () => {
     if (hymns.length === 0) return;
     
     setIsDownloading(true);
     
     try {
-      for (let i = 0; i < hymns.length; i++) {
-        const hymn = hymns[i];
-        await downloadImage(hymn.imageUrl, `hymn_${hymn.number}.gif`);
-        
-        // 다운로드 간격을 두어 브라우저가 처리할 수 있도록 함
-        if (i < hymns.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      }
+      // 오늘 날짜 가져오기 (YYYY-MM-DD 형식)
+      const today = new Date().toISOString().split('T')[0];
+      
+             for (let i = 0; i < hymns.length; i++) {
+         const hymn = hymns[i];
+         await downloadImage(hymn.imageUrl, `${today}.gif`);
+         
+                  // 다운로드 간격을 두어 브라우저가 처리할 수 있도록 함
+         if (i < hymns.length - 1) {
+           await new Promise(resolve => setTimeout(resolve, DOWNLOAD_DELAY));
+         }
+       }
     } catch (error) {
       console.error('이미지 다운로드 중 오류 발생:', error);
       alert('이미지 다운로드 중 오류가 발생했습니다.');
@@ -92,10 +108,10 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
     const isLongScore = img.height > UNIT_PAGE_HEIGHT; // 원본 이미지 높이가 800px 이상이면 긴 악보
     
     if (isLongScore) {
-      // 악보 시스템 수 계산 (8줄 또는 12줄)
-      const totalSystems = img.height > UNIT_PAGE_HEIGHT*2 ? 12 : 8; // 1200px 이상이면 12줄, 아니면 8줄
-      const systemHeight = img.height / totalSystems; // 시스템당 높이
-      const systemsPerPage = 4; // 페이지당 4줄씩
+             // 악보 시스템 수 계산 (8줄 또는 12줄)
+       const totalSystems = img.height > LONG_SCORE_THRESHOLD ? 12 : 8; // 1200px 이상이면 12줄, 아니면 8줄
+       const systemHeight = img.height / totalSystems; // 시스템당 높이
+       const systemsPerPage = SYSTEMS_PER_PAGE; // 페이지당 4줄씩
       const totalPages = Math.ceil(totalSystems / systemsPerPage); // 총 페이지 수
       
       console.log(`악보 정보: 총 ${totalSystems}줄, ${totalPages}페이지, 시스템 높이: ${systemHeight}px`);
@@ -124,7 +140,7 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
           );
         }
         
-        const partBase64 = partCanvas.toDataURL('image/png');
+                 const partBase64 = partCanvas.toDataURL('image/jpeg', IMAGE_QUALITY);
         const partImgHeight = (partHeight * imgWidth) / img.width;
         const partY = margin + (contentHeight - partImgHeight) / 2;
         
@@ -184,8 +200,8 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
       // 공통 이미지 처리 함수 사용
       const { canvas, img } = await processImage(blob);
       
-      // 악보 분할 처리
-      const { isLongScore, pages } = await splitImageForPDF(img, 800, 20, 600, 800, 0); // 임시 값들
+             // 악보 분할 처리
+       const { isLongScore, pages } = await splitImageForPDF(img, IMAGE_DOWNLOAD_WIDTH, IMAGE_DOWNLOAD_MARGIN, IMAGE_DOWNLOAD_HEIGHT, 800, 0); // 임시 값들
       
       if (isLongScore) {
         // 긴 악보는 각 페이지별로 JPG로 변환하여 다운로드
@@ -194,12 +210,12 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
           const pageCanvas = page.canvas;
           
           if (pageCanvas) {
-            // Canvas를 JPG로 변환 (품질 0.9로 설정)
-            const jpgBlob = await new Promise<Blob>((resolve) => {
-              pageCanvas.toBlob((blob) => {
-                resolve(blob!);
-              }, 'image/jpeg', 0.9);
-            });
+                         // Canvas를 JPG로 변환 (품질 설정 - 용량 절약)
+             const jpgBlob = await new Promise<Blob>((resolve) => {
+               pageCanvas.toBlob((blob) => {
+                 resolve(blob!);
+               }, 'image/jpeg', IMAGE_QUALITY);
+             });
             
             // JPG 파일명으로 변경 (페이지 번호 포함)
             const jpgFilename = filename.replace('.gif', `_page${page.pageNumber}.jpg`);
@@ -219,12 +235,12 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
           }
         }
       } else {
-        // 짧은 악보는 1장으로 JPG 변환하여 다운로드
-        const jpgBlob = await new Promise<Blob>((resolve) => {
-          canvas.toBlob((blob) => {
-            resolve(blob!);
-          }, 'image/jpeg', 0.9);
-        });
+                 // 짧은 악보는 1장으로 JPG 변환하여 다운로드 (품질 설정 - 용량 절약)
+         const jpgBlob = await new Promise<Blob>((resolve) => {
+           canvas.toBlob((blob) => {
+             resolve(blob!);
+           }, 'image/jpeg', IMAGE_QUALITY);
+         });
         
         // JPG 파일명으로 변경
         const jpgFilename = filename.replace('.gif', '.jpg');
@@ -258,9 +274,9 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 20;
-      const contentWidth = pageWidth - (margin * 2);
-      const contentHeight = pageHeight - (margin * 2);
+             const margin = PDF_MARGIN;
+       const contentWidth = pageWidth - (margin * 2);
+       const contentHeight = pageHeight - (margin * 2);
 
       for (let i = 0; i < hymns.length; i++) {
         const hymn = hymns[i];
@@ -300,14 +316,14 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
                 pdf.addImage(page.base64, 'PNG', margin, page.y, page.width, page.height);
               }
               
-              // 페이지 번호 추가
-              pdf.setFontSize(12);
-              pdf.setTextColor(100);
-              if (page.totalPages > 1) {
-                pdf.text(`Hymn ${hymn.number} - Page ${page.pageNumber}`, margin, pageHeight - 10);
-              } else {
-                pdf.text(`Hymn ${hymn.number}`, margin, pageHeight - 10);
-              }
+                             // 페이지 번호 추가
+               pdf.setFontSize(PDF_FONT_SIZE);
+               pdf.setTextColor(PDF_FONT_COLOR);
+               if (page.totalPages > 1) {
+                 pdf.text(`Hymn ${hymn.number} - Page ${page.pageNumber}`, margin, pageHeight - 10);
+               } else {
+                 pdf.text(`Hymn ${hymn.number}`, margin, pageHeight - 10);
+               }
               
               // 마지막 페이지가 아니면 새 페이지 추가
               if (i < pages.length - 1) {
@@ -320,14 +336,14 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
               }
             }
           } else {
-            // 짧은 악보는 1장에 그대로 추가
-            const correctedBase64 = canvas.toDataURL('image/png');
-            pdf.addImage(correctedBase64, 'PNG', margin, pages[0].y, pages[0].width, pages[0].height);
-            
-            // 페이지 번호 추가
-            pdf.setFontSize(12);
-            pdf.setTextColor(100);
-            pdf.text(`Hymn ${hymn.number}`, margin, pageHeight - 10);
+                                  // 짧은 악보는 1장에 그대로 추가 (JPEG로 압축하여 용량 절약)
+           const correctedBase64 = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+           pdf.addImage(correctedBase64, 'JPEG', margin, pages[0].y, pages[0].width, pages[0].height);
+           
+           // 페이지 번호 추가
+           pdf.setFontSize(PDF_FONT_SIZE);
+           pdf.setTextColor(PDF_FONT_COLOR);
+           pdf.text(`Hymn ${hymn.number}`, margin, pageHeight - 10);
           }
           
           // 메모리 정리
@@ -342,11 +358,11 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
           }
         } catch (error) {
           console.error(`PDF 생성 중 오류 (찬미가 ${hymn.number}장):`, error);
-          // 오류가 발생해도 계속 진행
-          pdf.setFontSize(16);
-          pdf.setTextColor(200);
-          pdf.text(`찬미가 ${hymn.number}장 - 이미지 로드 실패`, margin, pageHeight / 2);
-          pdf.text(`오류: ${error instanceof Error ? error.message : String(error)}`, margin, pageHeight / 2 + 10);
+                     // 오류가 발생해도 계속 진행
+           pdf.setFontSize(ERROR_FONT_SIZE);
+           pdf.setTextColor(ERROR_FONT_COLOR);
+           pdf.text(`찬미가 ${hymn.number}장 - 이미지 로드 실패`, margin, pageHeight / 2);
+           pdf.text(`오류: ${error instanceof Error ? error.message : String(error)}`, margin, pageHeight / 2 + 10);
           
           if (i < hymns.length - 1) {
             pdf.addPage();
@@ -354,10 +370,11 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
         }
       }
 
-      // PDF 다운로드
-      const filename = `hymns_${hymns.map(h => h.number).join('_')}.pdf`;
-      pdf.save(filename);
-      console.log(`PDF successfully created: ${filename}`);
+             // PDF 다운로드
+       const today = new Date().toISOString().split('T')[0];
+       const filename = `${today}.pdf`;
+       pdf.save(filename);
+       console.log(`PDF successfully created: ${filename}`);
       
     } catch (error) {
       console.error('PDF 생성 중 오류 발생:', error);
