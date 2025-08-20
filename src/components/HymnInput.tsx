@@ -12,7 +12,7 @@ export default function HymnInput({ onAddHymn }: HymnInputProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const number = parseInt(hymnNumber);
-    if (number > 0 && number <= 999) {
+    if (number > 0 && number <= 759) {
       onAddHymn(number);
       setHymnNumber('');
     }
@@ -28,14 +28,14 @@ export default function HymnInput({ onAddHymn }: HymnInputProps) {
           type="number"
           value={hymnNumber}
           onChange={(e) => setHymnNumber(e.target.value)}
-          placeholder="찬미가 번호 (1-999)"
+          placeholder="찬미가 번호 (1-759)"
           min="1"
-          max="999"
+          max="759"
           className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
         />
         <button
           type="submit"
-          disabled={!hymnNumber || parseInt(hymnNumber) <= 0 || parseInt(hymnNumber) > 999}
+          disabled={!hymnNumber || parseInt(hymnNumber) <= 0 || parseInt(hymnNumber) > 759}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
           추가
