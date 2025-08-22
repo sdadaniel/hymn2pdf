@@ -20,7 +20,6 @@ export const useInAppDetection = () => {
       if (isInAppBrowser) {
         // 인앱 브라우저에서 기본 브라우저로 열기
         const currentUrl = window.location.href;
-        const encodedUrl = encodeURIComponent(currentUrl);
         
         // 카카오톡의 경우
         if (isKakaoTalk) {

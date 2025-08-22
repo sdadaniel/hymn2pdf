@@ -109,7 +109,7 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
   };
 
   // 공통 이미지 분할 함수
-  const splitImageForPDF = async (img: HTMLImageElement, imgWidth: number, margin: number, contentHeight: number, pageHeight: number, hymnNumber: number) => {
+  const splitImageForPDF = async (img: HTMLImageElement, imgWidth: number, margin: number, contentHeight: number) => {
     const isLongScore = img.height > UNIT_PAGE_HEIGHT; // 원본 이미지 높이가 800px 이상이면 긴 악보
     
     if (isLongScore) {
@@ -206,7 +206,7 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
       const { canvas, img } = await processImage(blob);
       
              // 악보 분할 처리
-       const { isLongScore, pages } = await splitImageForPDF(img, IMAGE_DOWNLOAD_WIDTH, IMAGE_DOWNLOAD_MARGIN, IMAGE_DOWNLOAD_HEIGHT, 800, 0); // 임시 값들
+       const { isLongScore, pages } = await splitImageForPDF(img, IMAGE_DOWNLOAD_WIDTH, IMAGE_DOWNLOAD_MARGIN, IMAGE_DOWNLOAD_HEIGHT); // 임시 값들
       
       if (isLongScore) {
         // 긴 악보는 각 페이지별로 JPG로 변환하여 다운로드
@@ -310,7 +310,7 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
           const { canvas, img } = await processImage(blob);
           
           // 공통 이미지 분할 함수 사용
-          const { isLongScore, pages } = await splitImageForPDF(img, contentWidth, margin, contentHeight, pageHeight, hymn.number);
+          const { isLongScore, pages } = await splitImageForPDF(img, contentWidth, margin, contentHeight,);
           
           if (isLongScore) {
             // 긴 악보는 각 페이지별로 PDF에 추가

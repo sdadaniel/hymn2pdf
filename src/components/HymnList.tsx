@@ -1,16 +1,15 @@
 'use client';
 
-import { HymnItem } from '@/types/hymn';
+import { HymnItem } from '@/utils/type';
 import {
   closestCenter,
   DndContext,
   DragEndEvent,
-  DragStartEvent,
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
   useSensor,
-  useSensors,
+  useSensors
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -134,7 +133,7 @@ export default function HymnList({ hymns, onRemoveHymn, onReorderHymns }: HymnLi
     };
   }, [isDragging]);
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = () => {
     setIsDragging(true);
   };
 

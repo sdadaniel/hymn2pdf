@@ -5,7 +5,7 @@ import HymnInput from '@/components/HymnInput';
 import HymnList from '@/components/HymnList';
 import InAppBrowserNotice from '@/components/InAppBrowserNotice';
 import { useInAppDetection } from '@/hooks/useInAppDetection';
-import { HymnItem } from '@/types/hymn';
+import { HymnItem } from '@/utils/type';
 import { useState } from 'react';
 
 export default function Home() {
