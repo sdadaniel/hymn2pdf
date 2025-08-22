@@ -1,6 +1,7 @@
 'use client';
 
-import { HymnItem } from '@/types/hymn';
+import { sendHymnDownloadGAEvent } from '@/utils/hymnDownloadAnalytics';
+import { GA_FORMATS, GA_SOURCES, HymnItem } from '@/utils/type';
 import jsPDF from 'jspdf';
 import { useState } from 'react';
 
@@ -35,15 +36,19 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
       // 오늘 날짜 가져오기 (YYYY-MM-DD 형식)
       const today = new Date().toISOString().split('T')[0];
       
-             for (let i = 0; i < hymns.length; i++) {
-         const hymn = hymns[i];
-         await downloadImage(hymn.imageUrl, `${today}.gif`);
-         
-                  // 다운로드 간격을 두어 브라우저가 처리할 수 있도록 함
-         if (i < hymns.length - 1) {
-           await new Promise(resolve => setTimeout(resolve, DOWNLOAD_DELAY));
-         }
-       }
+      for (let i = 0; i < hymns.length; i++) {
+        const hymn = hymns[i];
+        await downloadImage(hymn.imageUrl, `${today}.gif`);
+        
+        // 다운로드 간격을 두어 브라우저가 처리할 수 있도록 함
+        if (i < hymns.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, DOWNLOAD_DELAY));
+        }
+      }
+      
+      // 모든 다운로드가 성공적으로 완료되면 GA 이벤트 전송
+      sendHymnDownloadGAEvent(hymns, GA_FORMATS.JPG, GA_SOURCES.HYMNAL_LIST);
+      
     } catch (error) {
       console.error('이미지 다운로드 중 오류 발생:', error);
       alert('이미지 다운로드 중 오류가 발생했습니다.');
@@ -371,10 +376,13 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
       }
 
              // PDF 다운로드
-       const today = new Date().toISOString().split('T')[0];
-       const filename = `${today}.pdf`;
-       pdf.save(filename);
-       console.log(`PDF successfully created: ${filename}`);
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `${today}.pdf`;
+      pdf.save(filename);
+      console.log(`PDF successfully created: ${filename}`);
+      
+      // PDF 다운로드가 성공적으로 완료되면 GA 이벤트 전송
+      sendHymnDownloadGAEvent(hymns, GA_FORMATS.PDF, GA_SOURCES.HYMNAL_LIST);
       
     } catch (error) {
       console.error('PDF 생성 중 오류 발생:', error);
