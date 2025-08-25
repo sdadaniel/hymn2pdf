@@ -6,23 +6,20 @@ export const sendHymnDownloadGAEvent = (
   format: string,
   source: string
 ) => {
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    const items = hymns.map(hymn => ({
-      // GA4가 인식하는 예약 키 (최소 하나 필수)
+  if (typeof window !== "undefined" && (window as any).dataLayer) {
+    const items = hymns.map((hymn) => ({
       item_id: hymn.number.toString(),
       item_name: `찬송가 ${hymn.number}장`,
-
-      // 커스텀 키(보고에 쓰려면 Item-scoped 맞춤 측정기준 등록)
-      hymn_id: hymn.number.toString(),
-      hymn_title: `찬송가 ${hymn.number}장`,
-      format,
-      source
+      index: hymn.number,
+      item_variant: format,
+      quantity: 1,
     }));
-
-    (window as any).gtag('event', 'download_hymn', {
-      items
+  
+    (window as any).dataLayer.push({
+      event: "view_cart",   // gtag의 "event" 파라미터 → dataLayer에서는 필수 키
+      currency: "USD",
+      value: 0,
+      items: items,
     });
-
-    console.log('GA Event sent:', { event: 'download_hymn', items });
   }
 };

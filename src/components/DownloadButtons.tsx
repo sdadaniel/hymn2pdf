@@ -32,6 +32,9 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
   const [hymnPageBreakInfos, setHymnPageBreakInfos] = useState<Map<string, HymnPageBreakInfo>>(new Map());
 
     const downloadImages = async () => {
+
+      
+
     if (hymns.length === 0) return;
     
     setIsDownloading(true);

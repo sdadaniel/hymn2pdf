@@ -11,6 +11,7 @@ export default function HymnInput({ onAddHymn }: HymnInputProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     const number = parseInt(hymnNumber);
     if (number > 0 && number <= 759) {
       onAddHymn(number);
