@@ -1,7 +1,7 @@
 'use client';
 
 import { sendHymnDownloadGAEvent } from '@/utils/hymnDownloadAnalytics';
-import { GA_FORMATS, GA_SOURCES, HymnItem, HymnPageBreakInfo, PageBreakPoint } from '@/utils/type';
+import { GA_FORMATS, HymnItem, HymnPageBreakInfo, PageBreakPoint } from '@/utils/type';
 import jsPDF from 'jspdf';
 import { useState } from 'react';
 import PageBreakModal from './PageBreakModal';
@@ -51,7 +51,7 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
       }
       
       // 모든 다운로드가 성공적으로 완료되면 GA 이벤트 전송
-      sendHymnDownloadGAEvent(hymns, GA_FORMATS.JPG, GA_SOURCES.HYMNAL_LIST);
+      sendHymnDownloadGAEvent(hymns, GA_FORMATS.JPG);
       
     } catch (error) {
       console.error('이미지 다운로드 중 오류 발생:', error);
@@ -488,7 +488,7 @@ export default function DownloadButtons({ hymns }: DownloadButtonsProps) {
       console.log(`PDF successfully created: ${filename}`);
       
       // PDF 다운로드가 성공적으로 완료되면 GA 이벤트 전송
-      sendHymnDownloadGAEvent(hymns, GA_FORMATS.PDF, GA_SOURCES.HYMNAL_LIST);
+      sendHymnDownloadGAEvent(hymns, GA_FORMATS.PDF,);
       
     } catch (error) {
       console.error('PDF 생성 중 오류 발생:', error);
