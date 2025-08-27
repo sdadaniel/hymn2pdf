@@ -1,0 +1,130 @@
+'use client';
+
+import { createPageBreakInfo } from '@/utils/imageProcessor';
+import { HymnItem, HymnPageBreakInfo } from '@/utils/type';
+import { useState } from 'react';
+import PageBreakModal from './PageBreakModal';
+
+interface HymnPreviewProps {
+  hymns: HymnItem[];
+  hymnPageBreakInfos: Map<string, HymnPageBreakInfo>;
+  onPageBreakConfirm: (hymnInfo: HymnPageBreakInfo) => void;
+}
+
+
+export default function HymnPreview({ 
+  hymns, 
+  hymnPageBreakInfos, 
+  onPageBreakConfirm 
+}: HymnPreviewProps) {
+  const [showPageBreakModal, setShowPageBreakModal] = useState(false);
+  const [currentHymnInfo, setCurrentHymnInfo] = useState<HymnPageBreakInfo | null>(null);
+
+  // 페이지 자르기 모달 열기
+  const openPageBreakModal = async (hymn: HymnItem) => {
+    try {
+      const hymnInfo = await createPageBreakInfo(hymn);
+      setCurrentHymnInfo(hymnInfo);
+      setShowPageBreakModal(true);
+    } catch (error) {
+      console.error('페이지 자르기 모달 열기 실패:', error);
+      alert('페이지 자르기 정보를 불러오는데 실패했습니다.');
+    }
+  };
+
+  // 페이지 자르기 설정 확인
+  const handlePageBreakConfirm = (hymnInfo: HymnPageBreakInfo) => {
+    onPageBreakConfirm(hymnInfo);
+  };
+
+  return (
+    <div className="mb-4">
+      <h3 className="text-lg font-semibold text-gray-700 mb-3">페이지 미리보기</h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {hymns.map((hymn) => {
+          const hasCustomBreaks = hymnPageBreakInfos.has(hymn.id);
+          const customBreakInfo = hymnPageBreakInfos.get(hymn.id);
+          // 이미지 높이가 1800px 이상이면 검토필요 (breakpoint 설정 여부와 무관)
+          const needsReview = customBreakInfo && customBreakInfo.originalHeight > 1800;
+          
+          return (
+            <div
+              key={hymn.id}
+              className="group cursor-pointer"
+              onClick={() => openPageBreakModal(hymn)}
+            >
+              {/* 썸네일 이미지 */}
+              <div className="relative mb-2">
+                <img
+                  src={hymn.imageUrl}
+                  alt={`찬미가 ${hymn.number}장`}
+                  className="w-full object-contain rounded-lg border-2 border-gray-200 group-hover:border-blue-400 transition-colors"
+                  style={{ maxHeight: '200px' }}
+                />
+                
+                {/* 자르기 포인트 표시 */}
+                {hasCustomBreaks && customBreakInfo && customBreakInfo.breakPoints.length > 0 && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    {customBreakInfo.breakPoints.map((breakPoint, index) => {
+                      const percentage = (breakPoint.y / customBreakInfo.originalHeight) * 100;
+                      return (
+                        <div
+                          key={breakPoint.id}
+                          className="absolute left-0 right-0 bg-red-500 h-0.5"
+                          style={{
+                            top: `${percentage}%`,
+                            transform: 'translateY(-50%)'
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {/* 상태 배지 */}
+                <div className="absolute top-2 right-2">
+                  {needsReview ? (
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-orange-500 text-white">
+                      검토필요
+                    </span>
+                  ) : hasCustomBreaks ? (
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-500 text-white">
+                      커스텀
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-500 text-white">
+                      기본
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              {/* 정보 */}
+              <div className="text-center">
+                <div className="text-sm font-medium text-gray-800">찬미가 {hymn.number}장</div>
+                <div className="text-xs text-gray-500">
+                  {hasCustomBreaks 
+                    ? `${customBreakInfo?.totalPages || 1}페이지`
+                    : needsReview 
+                      ? '검토 필요'
+                      : '1페이지'
+                  }
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 페이지 자르기 모달 */}
+      {showPageBreakModal && currentHymnInfo && (
+        <PageBreakModal
+          isOpen={showPageBreakModal}
+          onClose={() => setShowPageBreakModal(false)}
+          hymnInfo={currentHymnInfo}
+          onConfirm={handlePageBreakConfirm}
+        />
+      )}
+    </div>
+  );
+}
