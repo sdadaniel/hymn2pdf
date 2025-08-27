@@ -82,13 +82,24 @@ export default function PageBreakModal({
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!canvasRef.current || !imageLoaded) return;
+    if (!canvasRef.current || !imageLoaded || !imageRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
+    const canvas = canvasRef.current;
+    
+    // Canvas 내부 좌표 계산
+    const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const scaleY = (imageRef.current?.naturalHeight || 0) / rect.height;
+    
+    // Canvas와 이미지 크기 비율 계산
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    // 실제 이미지 좌표로 변환
+    const actualX = x * scaleX;
     const actualY = y * scaleY;
     
+    // Y 좌표만 사용 (가로 자르기)
     addBreakPoint(actualY);
   };
 

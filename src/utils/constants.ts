@@ -11,7 +11,7 @@ export const IMAGE_DOWNLOAD_MARGIN = 10; // 이미지 다운로드 시 여백
 export const IMAGE_DOWNLOAD_HEIGHT = 600; // 이미지 다운로드 시 높이
 
 // PDF 관련 상수
-export const PDF_MARGIN = 10; // PDF 여백 (mm)
+export const PDF_MARGIN = 15; // PDF 여백 (mm) - 더 넓게 조정
 export const PDF_FONT_SIZE = 12; // PDF 폰트 크기
 export const PDF_FONT_COLOR = 100; // PDF 폰트 색상
 export const ERROR_FONT_SIZE = 16; // 오류 메시지 폰트 크기

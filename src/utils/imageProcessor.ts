@@ -1,5 +1,5 @@
 import {
-    IMAGE_QUALITY
+  IMAGE_QUALITY
 } from './constants';
 import { HymnItem, HymnPageBreakInfo, PageBreakPoint, PDFPageInfo } from './type';
 
@@ -206,4 +206,35 @@ export const adjustImageSizeForPDF = (
     width: originalWidth * ratio,
     height: originalHeight * ratio
   };
+};
+
+// PDF에서 이미지 위치를 정확하게 계산하는 함수
+export const calculateImagePositionForPDF = (
+  imageWidth: number,
+  imageHeight: number,
+  pageWidth: number,
+  pageHeight: number,
+  margin: number,
+  alignment: 'left' | 'center' | 'right' = 'center'
+) => {
+  let x: number;
+  
+  switch (alignment) {
+    case 'left':
+      x = margin;
+      break;
+    case 'center':
+      x = margin + (pageWidth - imageWidth) / 2;
+      break;
+    case 'right':
+      x = pageWidth - imageWidth - margin;
+      break;
+    default:
+      x = margin;
+  }
+  
+  // 세로는 항상 상단에서 margin만큼
+  const y = margin;
+  
+  return { x, y };
 };

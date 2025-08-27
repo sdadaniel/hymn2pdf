@@ -207,8 +207,16 @@ export default function DownloadButtons({ hymns, hymnPageBreakInfos }: DownloadB
               const page = pages[i];
               
               if (page.base64) {
-                // 이미지 크기 조정 없이 원본 크기 그대로 사용
-                pdf.addImage(page.base64, 'PNG', page.x, page.y, page.width, page.height);
+                // 이미지 크기와 위치를 정확하게 계산
+                const imageWidth = Math.min(page.width, contentWidth);
+                const imageHeight = page.height;
+                
+                // PDF에 이미지 추가 시 정확한 위치 계산
+                // 가로 중앙 정렬, 세로는 상단에서 margin만큼
+                const x = margin + (contentWidth - imageWidth) / 2;
+                const y = margin;
+                
+                pdf.addImage(page.base64, 'JPEG', x, y, imageWidth, imageHeight);
               }
               
               // 페이지 번호 추가
@@ -233,8 +241,17 @@ export default function DownloadButtons({ hymns, hymnPageBreakInfos }: DownloadB
           } else {
             // 짧은 악보이거나 자르기 포인트가 없는 경우 1장에 그대로 추가
             const correctedBase64 = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
-            // 이미지 크기 조정 없이 원본 크기 그대로 사용
-            pdf.addImage(correctedBase64, 'JPEG', pages[0].x, pages[0].y, pages[0].width, pages[0].height);
+            
+            // 이미지 크기와 위치를 정확하게 계산
+            const imageWidth = Math.min(pages[0].width, contentWidth);
+            const imageHeight = pages[0].height;
+            
+            // PDF에 이미지 추가 시 정확한 위치 계산
+            // 가로 중앙 정렬, 세로는 상단에서 margin만큼
+            const x = margin + (contentWidth - imageWidth) / 2;
+            const y = margin;
+            
+            pdf.addImage(correctedBase64, 'JPEG', x, y, imageWidth, imageHeight);
             
             // 페이지 번호 추가
             pdf.setFontSize(PDF_FONT_SIZE);
