@@ -87,12 +87,18 @@ export default function ScoreCanvas({
     setImageLoaded(false);
     setImageError(false);
     
-    // imageData가 있으면 바로 로드
-    if (imageData && canvasRef.current) {
-      console.log('ScoreCanvas: imageData로 바로 로드 시작');
-      loadImageFromData(imageData);
-      return;
-    }
+         // imageData가 있으면 바로 로드
+     if (imageData && canvasRef.current) {
+       console.log('ScoreCanvas: imageData로 바로 로드 시작');
+       console.log('ScoreCanvas: imageData 길이:', imageData.length);
+       console.log('ScoreCanvas: imageData 시작 부분:', imageData.substring(0, 50));
+       loadImageFromData(imageData);
+       return;
+     } else {
+       console.log('ScoreCanvas: imageData 없음 또는 canvasRef 없음');
+       console.log('ScoreCanvas: imageData 존재 여부:', !!imageData);
+       console.log('ScoreCanvas: canvasRef 존재 여부:', !!canvasRef.current);
+     }
     
     // 기존 타임아웃 정리
     if (loadingTimeout) {

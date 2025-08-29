@@ -41,11 +41,13 @@ export default function HymnPreview({
       // 이미지 그리기
       ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
       
-      // 캔버스 데이터를 base64로 변환하여 저장
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      setHymnImageData(prev => new Map(prev).set(hymnId, dataUrl));
-      
-      console.log(`HymnPreview: ${hymnId} 캔버스 데이터 생성 완료`);
+             // 캔버스 데이터를 base64로 변환하여 저장
+       const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+       setHymnImageData(prev => new Map(prev).set(hymnId, dataUrl));
+       
+       console.log(`HymnPreview: ${hymnId} 캔버스 데이터 생성 완료`);
+       console.log(`HymnPreview: ${hymnId} 데이터 길이:`, dataUrl.length);
+       console.log(`HymnPreview: ${hymnId} 데이터 시작 부분:`, dataUrl.substring(0, 50));
     }
   };
 
@@ -78,11 +80,12 @@ export default function HymnPreview({
           const needsReview = customBreakInfo && customBreakInfo.originalHeight > 1800;
           
           return (
-            <div
-              key={hymn.id}
-              className="group cursor-pointer"
-              onClick={() => openPageBreakModal(hymn)}
-            >
+                         <div
+               key={hymn.id}
+               className="group cursor-pointer select-none touch-manipulation"
+               style={{ WebkitTapHighlightColor: 'transparent' }}
+               onClick={() => openPageBreakModal(hymn)}
+             >
                              {/* 썸네일 이미지 */}
                <div className="relative mb-2">
                  <img
@@ -192,16 +195,24 @@ export default function HymnPreview({
         })}
       </div>
 
-      {/* 페이지 자르기 모달 */}
-      {showPageBreakModal && currentHymnInfo && (
-                     <PageBreakModal
-               isOpen={showPageBreakModal}
-               onClose={() => setShowPageBreakModal(false)}
-               hymnInfo={currentHymnInfo}
-               onConfirm={handlePageBreakConfirm}
-               imageData={currentHymnInfo ? hymnImageData.get(currentHymnInfo.hymnId) : undefined}
-             />
-      )}
+             {/* 페이지 자르기 모달 */}
+       {showPageBreakModal && currentHymnInfo && (() => {
+         const imageData = hymnImageData.get(currentHymnInfo.hymnId);
+         console.log('HymnPreview: 모달 열기 시 imageData 전달');
+         console.log('HymnPreview: hymnId:', currentHymnInfo.hymnId);
+         console.log('HymnPreview: imageData 존재 여부:', !!imageData);
+         console.log('HymnPreview: imageData 길이:', imageData?.length || 0);
+         
+         return (
+           <PageBreakModal
+             isOpen={showPageBreakModal}
+             onClose={() => setShowPageBreakModal(false)}
+             hymnInfo={currentHymnInfo}
+             onConfirm={handlePageBreakConfirm}
+             imageData={imageData}
+           />
+         );
+       })()}
     </div>
   );
 }
