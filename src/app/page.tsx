@@ -3,16 +3,19 @@
 import DownloadButtons from '@/components/DownloadButtons';
 import HymnInput from '@/components/HymnInput';
 import HymnList from '@/components/HymnList';
+import HymnPreview from '@/components/HymnPreview';
 import InAppBrowserNotice from '@/components/InAppBrowserNotice';
 import { useInAppDetection } from '@/hooks/useInAppDetection';
-import { HymnItem } from '@/utils/type';
+import { createPageBreakInfo } from '@/utils/imageProcessor';
+import { HymnItem, HymnPageBreakInfo } from '@/utils/type';
 import { useState } from 'react';
 
 export default function Home() {
   const [hymns, setHymns] = useState<HymnItem[]>([]);
+  const [hymnPageBreakInfos, setHymnPageBreakInfos] = useState<Map<string, HymnPageBreakInfo>>(new Map());
   const { isInApp } = useInAppDetection();
 
-  const addHymn = (hymnNumber: number) => {
+  const addHymn = async (hymnNumber: number) => {
     // 이미 존재하는 번호인지 확인
     if (hymns.some(hymn => hymn.number === hymnNumber)) {
       alert(`찬미가 ${hymnNumber}장은 이미 추가되어 있습니다.`);
@@ -24,15 +27,36 @@ export default function Home() {
       number: hymnNumber,
       imageUrl: `https://www.adventist.or.kr/data/hymnal/NOTE_2016/${hymnNumber.toString().padStart(3, '0')}.gif`,
     };
+    
     setHymns([...hymns, newHymn]);
+    
+    // 찬미가 추가 시 기본 페이지 자르기 정보를 미리 생성하여 높이 정보 저장
+    try {
+      const hymnInfo = await createPageBreakInfo(newHymn);
+      setHymnPageBreakInfos(prev => new Map(prev.set(hymnInfo.hymnId, hymnInfo)));
+    } catch (error) {
+      console.error('페이지 자르기 정보 생성 실패:', error);
+      // 실패해도 찬미가는 추가됨
+    }
   };
 
   const removeHymn = (id: string) => {
     setHymns(hymns.filter(hymn => hymn.id !== id));
+    // 찬미가가 제거되면 해당 페이지 자르기 정보도 제거
+    setHymnPageBreakInfos(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(id);
+      return newMap;
+    });
   };
 
   const reorderHymns = (newOrder: HymnItem[]) => {
     setHymns(newOrder);
+  };
+
+  // 페이지 자르기 설정 확인
+  const handlePageBreakConfirm = (hymnInfo: HymnPageBreakInfo) => {
+    setHymnPageBreakInfos(prev => new Map(prev.set(hymnInfo.hymnId, hymnInfo)));
   };
 
   return (
@@ -63,8 +87,21 @@ export default function Home() {
               />
             </div>
 
+            {/* 페이지 미리보기 영역 */}
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <HymnPreview
+                hymns={hymns}
+                hymnPageBreakInfos={hymnPageBreakInfos}
+                onPageBreakConfirm={handlePageBreakConfirm}
+                onRemoveHymn={removeHymn}
+              />
+            </div>
+
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <DownloadButtons hymns={hymns} />
+              <DownloadButtons 
+                hymns={hymns} 
+                hymnPageBreakInfos={hymnPageBreakInfos}
+              />
             </div>
           </>
         )}

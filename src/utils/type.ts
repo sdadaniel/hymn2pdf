@@ -32,6 +32,18 @@ export interface HymnPageBreakInfo {
   totalPages: number;
 }
 
+// PDF 페이지 정보를 위한 새로운 인터페이스
+export interface PDFPageInfo {
+  base64: string | null;
+  width: number;
+  height: number;
+  y: number;
+  x: number;
+  pageNumber: number;
+  totalPages: number;
+  canvas: HTMLCanvasElement | null;
+}
+
 // GA 이벤트 상수
 export const GA_EVENTS = {
   DOWNLOAD_HYMN: 'download_hymn'

@@ -4,7 +4,6 @@ import { HymnItem } from './type';
 export const sendHymnDownloadGAEvent = (
   hymns: HymnItem[],
   format: string,
-  source: string
 ) => {
   if (typeof window !== "undefined" && (window as any).dataLayer) {
     const items = hymns.map((hymn) => ({
@@ -15,7 +14,7 @@ export const sendHymnDownloadGAEvent = (
       quantity: 1,
     }));
   
-    (window as any).dataLayer.push({
+    (window as any).gtag({
       event: "view_cart",   // gtag의 "event" 파라미터 → dataLayer에서는 필수 키
       currency: "USD",
       value: 0,
