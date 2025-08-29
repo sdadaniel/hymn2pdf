@@ -21,6 +21,33 @@ export default function HymnPreview({
 }: HymnPreviewProps) {
   const [showPageBreakModal, setShowPageBreakModal] = useState(false);
   const [currentHymnInfo, setCurrentHymnInfo] = useState<HymnPageBreakInfo | null>(null);
+  const [hymnImageData, setHymnImageData] = useState<Map<string, string>>(new Map());
+
+  // 이미지를 캔버스 데이터로 변환
+  const generateCanvasData = (hymnId: string, img: HTMLImageElement) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      // 캔버스 크기 설정 (미리보기용으로 작게)
+      const maxHeight = 200;
+      const aspectRatio = img.naturalWidth / img.naturalHeight;
+      const canvasHeight = Math.min(img.naturalHeight, maxHeight);
+      const canvasWidth = canvasHeight * aspectRatio;
+      
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      
+      // 이미지 그리기
+      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+      
+      // 캔버스 데이터를 base64로 변환하여 저장
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      setHymnImageData(prev => new Map(prev).set(hymnId, dataUrl));
+      
+      console.log(`HymnPreview: ${hymnId} 캔버스 데이터 생성 완료`);
+    }
+  };
 
   // 페이지 자르기 모달 열기
   const openPageBreakModal = async (hymn: HymnItem) => {
@@ -73,6 +100,9 @@ export default function HymnPreview({
                      if (skeleton) {
                        skeleton.classList.add('hidden');
                      }
+                     
+                     // 캔버스 데이터 생성 및 저장
+                     generateCanvasData(hymn.id, target);
                    }}
                    onError={(e) => {
                      const target = e.target as HTMLImageElement;
@@ -164,12 +194,13 @@ export default function HymnPreview({
 
       {/* 페이지 자르기 모달 */}
       {showPageBreakModal && currentHymnInfo && (
-        <PageBreakModal
-          isOpen={showPageBreakModal}
-          onClose={() => setShowPageBreakModal(false)}
-          hymnInfo={currentHymnInfo}
-          onConfirm={handlePageBreakConfirm}
-        />
+                     <PageBreakModal
+               isOpen={showPageBreakModal}
+               onClose={() => setShowPageBreakModal(false)}
+               hymnInfo={currentHymnInfo}
+               onConfirm={handlePageBreakConfirm}
+               imageData={currentHymnInfo ? hymnImageData.get(currentHymnInfo.hymnId) : undefined}
+             />
       )}
     </div>
   );

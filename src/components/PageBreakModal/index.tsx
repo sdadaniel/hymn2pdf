@@ -4,8 +4,7 @@ import { useScrollLock } from '@/hooks/useScrollLock';
 import {
   addBreakPoint,
   removeAllBreakPoints,
-  removeBreakPoint,
-  restoreRecommendedSettings
+  removeBreakPoint
 } from '@/utils/pageBreakUtils';
 import { HymnPageBreakInfo } from '@/utils/type';
 import { useEffect, useState } from 'react';
@@ -19,13 +18,15 @@ interface PageBreakModalProps {
   onClose: () => void;
   hymnInfo: HymnPageBreakInfo | null;
   onConfirm: (hymnInfo: HymnPageBreakInfo) => void;
+  imageData?: string; // 미리보기에서 로드된 이미지 데이터 (base64)
 }
 
 export default function PageBreakModal({ 
   isOpen, 
   onClose, 
   hymnInfo, 
-  onConfirm 
+  onConfirm,
+  imageData
 }: PageBreakModalProps) {
   const [localHymnInfo, setLocalHymnInfo] = useState<HymnPageBreakInfo | null>(null);
 
@@ -59,12 +60,7 @@ export default function PageBreakModal({
     }
   };
 
-  const handleRestoreRecommended = () => {
-    if (hymnInfo) {
-      const updatedHymnInfo = restoreRecommendedSettings(hymnInfo);
-      setLocalHymnInfo(updatedHymnInfo);
-    }
-  };
+  
 
   const handleConfirm = () => {
     if (localHymnInfo) {
@@ -90,6 +86,7 @@ export default function PageBreakModal({
             <ScoreCanvas 
               hymnInfo={localHymnInfo}
               imageUrl={hymnInfo.imageUrl}
+              imageData={imageData}
               onAddBreakPoint={handleAddBreakPoint}
               onRemoveBreakPoint={handleRemoveBreakPoint}
             />
