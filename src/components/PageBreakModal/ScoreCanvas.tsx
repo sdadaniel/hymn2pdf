@@ -160,10 +160,20 @@ export default function ScoreCanvas({
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!canvasRef.current || !imageLoaded || !imageRef.current) return;
+    if (!canvasRef.current || !imageLoaded) return;
     
-    const coordinates = calculateImageCoordinates(e, canvasRef.current, imageRef.current);
+    // loadedImage가 있으면 그것을 사용, 없으면 imageRef 사용
+    const referenceImage = loadedImage || imageRef.current;
+    if (!referenceImage) return;
+    
+    const coordinates = calculateImageCoordinates(e, canvasRef.current, referenceImage);
     if (coordinates) {
+      console.log('ScoreCanvas: 클릭 좌표 계산 결과:', {
+        clickY: e.clientY,
+        canvasRect: canvasRef.current.getBoundingClientRect(),
+        imageSize: `${referenceImage.naturalWidth}x${referenceImage.naturalHeight}`,
+        calculatedY: coordinates.y
+      });
       onAddBreakPoint(coordinates.y);
     }
   };
@@ -218,43 +228,55 @@ export default function ScoreCanvas({
           </div>
         )}
         
-        {/* 자르기 라인 표시 */}
-        {imageLoaded && hymnInfo.breakPoints.map((breakPoint) => {
-          const canvas = canvasRef.current;
-          if (!canvas) return null;
-          
-          const rect = canvas.getBoundingClientRect();
-          const scaleY = rect.height / (imageRef.current?.naturalHeight || 1);
-          const displayY = breakPoint.y * scaleY;
-          
-          return (
-            <div
-              key={breakPoint.id}
-              className="absolute left-0 right-0 flex items-center z-10"
-              style={{
-                top: `${displayY}px`,
-                transform: 'translateY(-50%)'
-              }}
-            >
-              {/* 자르기 라인 */}
-              <div className="flex-1 bg-red-500 h-0.5" />
-              
-              {/* 삭제 버튼 */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemoveBreakPoint(breakPoint.id);
-                }}
-                className="ml-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
-                title="자르기 포인트 삭제"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          );
-        })}
+                 {/* 자르기 라인 표시 */}
+         {imageLoaded && hymnInfo.breakPoints.map((breakPoint) => {
+           const canvas = canvasRef.current;
+           if (!canvas) return null;
+           
+           // loadedImage가 있으면 그것을 사용, 없으면 imageRef 사용
+           const referenceImage = loadedImage || imageRef.current;
+           if (!referenceImage) return null;
+           
+           const rect = canvas.getBoundingClientRect();
+           const scaleY = rect.height / referenceImage.naturalHeight;
+           const displayY = breakPoint.y * scaleY;
+           
+           console.log('ScoreCanvas: 자르기 라인 위치 계산:', {
+             breakPointY: breakPoint.y,
+             referenceImageHeight: referenceImage.naturalHeight,
+             canvasHeight: rect.height,
+             scaleY,
+             displayY
+           });
+           
+           return (
+             <div
+               key={breakPoint.id}
+               className="absolute left-0 right-0 flex items-center z-10"
+               style={{
+                 top: `${displayY}px`,
+                 transform: 'translateY(-50%)'
+               }}
+             >
+               {/* 자르기 라인 */}
+               <div className="flex-1 bg-red-500 h-0.5" />
+               
+               {/* 삭제 버튼 */}
+               <button
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   onRemoveBreakPoint(breakPoint.id);
+                 }}
+                 className="ml-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
+                 title="자르기 포인트 삭제"
+               >
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                 </svg>
+               </button>
+             </div>
+           );
+         })}
       </div>
 
              {/* 숨겨진 이미지 (로딩용) */}
