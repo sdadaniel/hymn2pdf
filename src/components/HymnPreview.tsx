@@ -32,15 +32,21 @@ export default function HymnPreview({
     console.log(`HymnPreview: ${hymnId} 이미지 로드 완료, 크기:`, img.naturalWidth, 'x', img.naturalHeight);
   };
 
-  // 페이지 자르기 모달 열기
+  // 페이지 자르기 모달 열기 (최적화됨)
   const openPageBreakModal = async (hymn: HymnItem) => {
     try {
+      // ✅ 모달을 즉시 열기 (Canvas 로딩과 무관하게)
+      setShowPageBreakModal(true);
+      
+      // 백그라운드에서 hymnInfo 생성
       const hymnInfo = await createPageBreakInfo(hymn);
       setCurrentHymnInfo(hymnInfo);
-      setShowPageBreakModal(true);
+      
+      console.log('HymnPreview: 모달 즉시 열기 완료, hymnInfo 로딩 중...');
     } catch (error) {
       console.error('페이지 자르기 모달 열기 실패:', error);
       alert('페이지 자르기 정보를 불러오는데 실패했습니다.');
+      setShowPageBreakModal(false); // 에러 시 모달 닫기
     }
   };
 

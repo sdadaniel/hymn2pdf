@@ -23,7 +23,7 @@ export default function ScoreCanvas({
   const [imageError, setImageError] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // loadedImage로부터 이미지 로드
+  // loadedImage로부터 이미지 로드 (최적화됨)
   const loadImageFromElement = (img: HTMLImageElement) => {
     if (!canvasRef.current) return;
     
@@ -31,11 +31,7 @@ export default function ScoreCanvas({
     const ctx = canvas.getContext('2d');
     
     if (ctx) {
-      // 캔버스 성능 최적화 설정
-      ctx.imageSmoothingEnabled = false;
-      ctx.imageSmoothingQuality = 'low';
-      
-      // 이미지 크기 계산 (모바일 최적화)
+      // ✅ 즉시 Canvas 크기 설정 (빠른 렌더링을 위해)
       const maxWidth = window.innerWidth > 768 ? 1200 : 800;
       const maxHeight = window.innerWidth > 768 ? 1600 : 1000;
       
@@ -46,44 +42,53 @@ export default function ScoreCanvas({
         height = Math.floor(height * ratio);
       }
       
-      // 캔버스 크기 설정
+      // Canvas 크기 설정
       canvas.width = width;
       canvas.height = height;
       
-      // 이미지 그리기
-      ctx.drawImage(img, 0, 0, width, height);
+      // ✅ 성능 최적화 설정
+      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingQuality = 'low';
       
-      // 성공 상태 설정
-      setImageLoaded(true);
-      setImageError(false);
-      
-      // 타임아웃 정리
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-        setLoadingTimeout(null);
-      }
-      
-      console.log('=== ScoreCanvas loadImageFromElement 상세 로그 ===');
-      console.log('원본 이미지 크기:', {
-        naturalWidth: img.naturalWidth,
-        naturalHeight: img.naturalHeight
+      // ✅ requestAnimationFrame으로 비동기 렌더링
+      requestAnimationFrame(() => {
+        if (ctx && canvas) {
+          // 이미지 그리기
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // 성공 상태 설정
+          setImageLoaded(true);
+          setImageError(false);
+          
+          // 타임아웃 정리
+          if (loadingTimeout) {
+            clearTimeout(loadingTimeout);
+            setLoadingTimeout(null);
+          }
+          
+          console.log('=== ScoreCanvas loadImageFromElement 상세 로그 ===');
+          console.log('원본 이미지 크기:', {
+            naturalWidth: img.naturalWidth,
+            naturalHeight: img.naturalHeight
+          });
+          console.log('최적화된 크기:', {
+            maxWidth,
+            maxHeight,
+            finalWidth: width,
+            finalHeight: height
+          });
+          console.log('캔버스 크기:', {
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height
+          });
+          console.log('화면 크기:', {
+            windowWidth: window.innerWidth,
+            windowHeight: window.innerHeight,
+            isMobile: window.innerWidth <= 768
+          });
+          console.log('========================================');
+        }
       });
-      console.log('최적화된 크기:', {
-        maxWidth,
-        maxHeight,
-        finalWidth: width,
-        finalHeight: height
-      });
-      console.log('캔버스 크기:', {
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height
-      });
-      console.log('화면 크기:', {
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        isMobile: window.innerWidth <= 768
-      });
-      console.log('========================================');
     }
   };
 

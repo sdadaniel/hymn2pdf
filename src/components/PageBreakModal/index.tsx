@@ -69,7 +69,24 @@ export default function PageBreakModal({
     }
   };
 
-  if (!isOpen || !hymnInfo || !localHymnInfo) return null;
+  if (!isOpen) return null;
+  
+  // hymnInfo가 로딩 중일 때 로딩 상태 표시
+  if (!hymnInfo) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[85vh] flex flex-col overflow-hidden">
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <div className="text-lg font-medium text-gray-700">찬미가 정보를 불러오는 중...</div>
+            <div className="text-sm text-gray-500 mt-2">잠시만 기다려주세요</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!localHymnInfo) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
