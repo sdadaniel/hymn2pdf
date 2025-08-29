@@ -93,6 +93,7 @@ export default function Home() {
                 hymns={hymns}
                 hymnPageBreakInfos={hymnPageBreakInfos}
                 onPageBreakConfirm={handlePageBreakConfirm}
+                onRemoveHymn={removeHymn}
               />
             </div>
 

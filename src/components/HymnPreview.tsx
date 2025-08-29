@@ -9,13 +9,15 @@ interface HymnPreviewProps {
   hymns: HymnItem[];
   hymnPageBreakInfos: Map<string, HymnPageBreakInfo>;
   onPageBreakConfirm: (hymnInfo: HymnPageBreakInfo) => void;
+  onRemoveHymn: (id: string) => void;
 }
 
 
 export default function HymnPreview({ 
   hymns, 
   hymnPageBreakInfos, 
-  onPageBreakConfirm 
+  onPageBreakConfirm,
+  onRemoveHymn
 }: HymnPreviewProps) {
   const [showPageBreakModal, setShowPageBreakModal] = useState(false);
   const [currentHymnInfo, setCurrentHymnInfo] = useState<HymnPageBreakInfo | null>(null);
@@ -82,36 +84,55 @@ export default function HymnPreview({
                   </div>
                 )}
                 
-                {/* 상태 배지 */}
-                <div className="absolute top-2 right-2">
-                  {needsReview ? (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-orange-500 text-white">
-                      검토필요
-                    </span>
-                  ) : hasCustomBreaks ? (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-500 text-white">
-                      커스텀
-                    </span>
-                  ) : (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-500 text-white">
-                      기본
-                    </span>
-                  )}
-                </div>
+                                 {/* 삭제 버튼 - 썸네일 우측 상단 */}
+                 <button
+                   onClick={(e) => {
+                     e.stopPropagation(); // 모달 열기 방지
+                     onRemoveHymn(hymn.id);
+                   }}
+                   className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-full shadow-lg transition-all duration-200 active:scale-95"
+                   title="삭제"
+                 >
+                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                   </svg>
+                 </button>
               </div>
               
-              {/* 정보 */}
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-800">찬미가 {hymn.number}장</div>
-                <div className="text-xs text-gray-500">
-                  {hasCustomBreaks 
-                    ? `${customBreakInfo?.totalPages || 1}페이지`
-                    : needsReview 
-                      ? '검토 필요'
-                      : '1페이지'
-                  }
+                             {/* 정보 */}
+               <div className="p-1">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm font-medium text-gray-800">찬미가 {hymn.number}장</div>
+                  {/* 왼쪽: 상태 배지 */}
+                  <div>
+                      {needsReview ? (
+                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-orange-500 text-white">
+                          검토필요
+                        </span>
+                      ) : hasCustomBreaks ? (
+                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-500 text-white">
+                          커스텀
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-gray-500 text-white">
+                          기본
+                        </span>
+                      )}
+                    </div>
                 </div>
-              </div>
+
+                
+                 
+                                   {/* 상태 배지와 페이지 정보 - 좌우 배치 */}
+                  <div className="mt-1 mb-2 flex  items-center">
+                    
+                    
+                    {/* 오른쪽: 페이지 정보 */}
+                    <div className="text-xs text-gray-500">
+                    {`${customBreakInfo?.totalPages || 1}페이지`}
+                    </div>
+                  </div>
+               </div>
             </div>
           );
         })}
