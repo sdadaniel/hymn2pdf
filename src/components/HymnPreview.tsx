@@ -21,16 +21,32 @@ export default function HymnPreview({
 }: HymnPreviewProps) {
   const [showPageBreakModal, setShowPageBreakModal] = useState(false);
   const [currentHymnInfo, setCurrentHymnInfo] = useState<HymnPageBreakInfo | null>(null);
+  const [hymnImageData, setHymnImageData] = useState<Map<string, string>>(new Map());
 
-  // 페이지 자르기 모달 열기
+    // 이미지 로드 상태 추적
+  const [loadedImages, setLoadedImages] = useState<Map<string, HTMLImageElement>>(new Map());
+
+  // 이미지 로드 완료 시 상태 저장
+  const handleImageLoaded = (hymnId: string, img: HTMLImageElement) => {
+    setLoadedImages(prev => new Map(prev).set(hymnId, img));
+    console.log(`HymnPreview: ${hymnId} 이미지 로드 완료, 크기:`, img.naturalWidth, 'x', img.naturalHeight);
+  };
+
+  // 페이지 자르기 모달 열기 (최적화됨)
   const openPageBreakModal = async (hymn: HymnItem) => {
     try {
+      // ✅ 모달을 즉시 열기 (Canvas 로딩과 무관하게)
+      setShowPageBreakModal(true);
+      
+      // 백그라운드에서 hymnInfo 생성
       const hymnInfo = await createPageBreakInfo(hymn);
       setCurrentHymnInfo(hymnInfo);
-      setShowPageBreakModal(true);
+      
+      console.log('HymnPreview: 모달 즉시 열기 완료, hymnInfo 로딩 중...');
     } catch (error) {
       console.error('페이지 자르기 모달 열기 실패:', error);
       alert('페이지 자르기 정보를 불러오는데 실패했습니다.');
+      setShowPageBreakModal(false); // 에러 시 모달 닫기
     }
   };
 
@@ -51,11 +67,12 @@ export default function HymnPreview({
           const needsReview = customBreakInfo && customBreakInfo.originalHeight > 1800;
           
           return (
-            <div
-              key={hymn.id}
-              className="group cursor-pointer"
-              onClick={() => openPageBreakModal(hymn)}
-            >
+                         <div
+               key={hymn.id}
+               className="group cursor-pointer select-none touch-manipulation"
+               style={{ WebkitTapHighlightColor: 'transparent' }}
+               onClick={() => openPageBreakModal(hymn)}
+             >
                              {/* 썸네일 이미지 */}
                <div className="relative mb-2">
                  <img
@@ -73,6 +90,9 @@ export default function HymnPreview({
                      if (skeleton) {
                        skeleton.classList.add('hidden');
                      }
+                     
+                                           // 이미지 로드 완료 상태 저장
+                      handleImageLoaded(hymn.id, target);
                    }}
                    onError={(e) => {
                      const target = e.target as HTMLImageElement;
@@ -162,15 +182,24 @@ export default function HymnPreview({
         })}
       </div>
 
-      {/* 페이지 자르기 모달 */}
-      {showPageBreakModal && currentHymnInfo && (
-        <PageBreakModal
-          isOpen={showPageBreakModal}
-          onClose={() => setShowPageBreakModal(false)}
-          hymnInfo={currentHymnInfo}
-          onConfirm={handlePageBreakConfirm}
-        />
-      )}
+             {/* 페이지 자르기 모달 */}
+       {showPageBreakModal && currentHymnInfo && (() => {
+         const loadedImage = loadedImages.get(currentHymnInfo.hymnId);
+         console.log('HymnPreview: 모달 열기 시 loadedImage 전달');
+         console.log('HymnPreview: hymnId:', currentHymnInfo.hymnId);
+         console.log('HymnPreview: loadedImage 존재 여부:', !!loadedImage);
+         console.log('HymnPreview: loadedImage 크기:', loadedImage ? `${loadedImage.naturalWidth}x${loadedImage.naturalHeight}` : '없음');
+         
+         return (
+           <PageBreakModal
+             isOpen={showPageBreakModal}
+             onClose={() => setShowPageBreakModal(false)}
+             hymnInfo={currentHymnInfo}
+             onConfirm={handlePageBreakConfirm}
+             loadedImage={loadedImage}
+           />
+         );
+       })()}
     </div>
   );
 }

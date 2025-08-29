@@ -69,7 +69,10 @@ export const calculateImageCoordinates = (
   canvas: HTMLCanvasElement,
   imageRef: HTMLImageElement | null
 ): { x: number; y: number } | null => {
-  if (!imageRef) return null;
+  if (!imageRef) {
+    console.log('calculateImageCoordinates: imageRef가 null입니다');
+    return null;
+  }
   
   const rect = canvas.getBoundingClientRect();
   
@@ -77,13 +80,52 @@ export const calculateImageCoordinates = (
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
   
-  // Canvas와 이미지 크기 비율 계산
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
+  // ✅ 정확한 스케일링 계산: 원본 이미지 크기 vs Canvas 크기
+  const scaleX = imageRef.naturalWidth / canvas.width;
+  const scaleY = imageRef.naturalHeight / canvas.height;
   
   // 실제 이미지 좌표로 변환
   const actualX = x * scaleX;
   const actualY = y * scaleY;
+  
+  console.log('=== calculateImageCoordinates 상세 로그 ===');
+  console.log('클릭 이벤트 정보:', {
+    clientX: event.clientX,
+    clientY: event.clientY,
+    pageX: event.pageX,
+    pageY: event.pageY
+  });
+  console.log('Canvas 정보:', {
+    width: canvas.width,
+    height: canvas.height,
+    offsetWidth: canvas.offsetWidth,
+    offsetHeight: canvas.offsetHeight,
+    scrollWidth: canvas.scrollWidth,
+    scrollHeight: canvas.scrollHeight
+  });
+  console.log('getBoundingClientRect 정보:', {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+    right: rect.right,
+    bottom: rect.bottom
+  });
+  console.log('이미지 정보:', {
+    naturalWidth: imageRef.naturalWidth,
+    naturalHeight: imageRef.naturalHeight,
+    width: imageRef.width,
+    height: imageRef.height
+  });
+  console.log('✅ 수정된 스케일링 계산:', {
+    canvasX: x,
+    canvasY: y,
+    scaleX: `${scaleX} (${imageRef.naturalWidth} / ${canvas.width})`,
+    scaleY: `${scaleY} (${imageRef.naturalHeight} / ${canvas.height})`,
+    actualX,
+    actualY
+  });
+  console.log('========================================');
   
   return { x: actualX, y: actualY };
 };

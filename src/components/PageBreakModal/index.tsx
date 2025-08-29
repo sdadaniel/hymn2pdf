@@ -4,8 +4,7 @@ import { useScrollLock } from '@/hooks/useScrollLock';
 import {
   addBreakPoint,
   removeAllBreakPoints,
-  removeBreakPoint,
-  restoreRecommendedSettings
+  removeBreakPoint
 } from '@/utils/pageBreakUtils';
 import { HymnPageBreakInfo } from '@/utils/type';
 import { useEffect, useState } from 'react';
@@ -19,13 +18,15 @@ interface PageBreakModalProps {
   onClose: () => void;
   hymnInfo: HymnPageBreakInfo | null;
   onConfirm: (hymnInfo: HymnPageBreakInfo) => void;
+  loadedImage?: HTMLImageElement; // 미리보기에서 로드된 이미지 요소
 }
 
 export default function PageBreakModal({ 
   isOpen, 
   onClose, 
   hymnInfo, 
-  onConfirm 
+  onConfirm,
+  loadedImage
 }: PageBreakModalProps) {
   const [localHymnInfo, setLocalHymnInfo] = useState<HymnPageBreakInfo | null>(null);
 
@@ -59,12 +60,7 @@ export default function PageBreakModal({
     }
   };
 
-  const handleRestoreRecommended = () => {
-    if (hymnInfo) {
-      const updatedHymnInfo = restoreRecommendedSettings(hymnInfo);
-      setLocalHymnInfo(updatedHymnInfo);
-    }
-  };
+  
 
   const handleConfirm = () => {
     if (localHymnInfo) {
@@ -73,7 +69,24 @@ export default function PageBreakModal({
     }
   };
 
-  if (!isOpen || !hymnInfo || !localHymnInfo) return null;
+  if (!isOpen) return null;
+  
+  // hymnInfo가 로딩 중일 때 로딩 상태 표시
+  if (!hymnInfo) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[85vh] flex flex-col overflow-hidden">
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <div className="text-lg font-medium text-gray-700">찬미가 정보를 불러오는 중...</div>
+            <div className="text-sm text-gray-500 mt-2">잠시만 기다려주세요</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!localHymnInfo) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -87,12 +100,13 @@ export default function PageBreakModal({
         <div className="flex flex-1 overflow-hidden">       
           <div className="flex-1 p-4 overflow-auto">
             
-            <ScoreCanvas 
-              hymnInfo={localHymnInfo}
-              imageUrl={hymnInfo.imageUrl}
-              onAddBreakPoint={handleAddBreakPoint}
-              onRemoveBreakPoint={handleRemoveBreakPoint}
-            />
+                         <ScoreCanvas 
+               hymnInfo={localHymnInfo}
+               imageUrl={hymnInfo.imageUrl}
+               loadedImage={loadedImage}
+               onAddBreakPoint={handleAddBreakPoint}
+               onRemoveBreakPoint={handleRemoveBreakPoint}
+             />
           </div>
         </div>
 
