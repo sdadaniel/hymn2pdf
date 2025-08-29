@@ -281,15 +281,15 @@ export default function ScoreCanvas({
            const referenceImage = loadedImage || imageRef.current;
            if (!referenceImage) return null;
            
-           const rect = canvas.getBoundingClientRect();
-           const scaleY = rect.height / referenceImage.naturalHeight;
+           // ✅ 수정된 스케일링: Canvas 실제 크기 vs 원본 이미지 크기
+           const scaleY = canvas.height / referenceImage.naturalHeight;
            const displayY = breakPoint.y * scaleY;
            
-           console.log('ScoreCanvas: 자르기 라인 위치 계산:', {
+           console.log('ScoreCanvas: 자르기 라인 위치 계산 (수정됨):', {
              breakPointY: breakPoint.y,
              referenceImageHeight: referenceImage.naturalHeight,
-             canvasHeight: rect.height,
-             scaleY,
+             canvasActualHeight: canvas.height,
+             scaleY: `${scaleY} (${canvas.height} / ${referenceImage.naturalHeight})`,
              displayY
            });
            
