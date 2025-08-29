@@ -1,6 +1,6 @@
 import {
   IMAGE_QUALITY
-} from './constants';
+} from '../constants';
 import { HymnItem, HymnPageBreakInfo, PageBreakPoint, PDFPageInfo } from './type';
 
 // 공통 이미지 처리 함수

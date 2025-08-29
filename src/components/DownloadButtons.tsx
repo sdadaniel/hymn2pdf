@@ -11,7 +11,7 @@ import {
   PDF_FONT_COLOR,
   PDF_FONT_SIZE,
   PDF_MARGIN
-} from '@/utils/constants';
+} from '@/constants';
 import { sendHymnDownloadGAEvent } from '@/utils/hymnDownloadAnalytics';
 import { calculateOptimalImageSizeForPDF, processImage, splitImageForPDF } from '@/utils/imageProcessor';
 import { GA_FORMATS, HymnItem, HymnPageBreakInfo } from '@/utils/type';
