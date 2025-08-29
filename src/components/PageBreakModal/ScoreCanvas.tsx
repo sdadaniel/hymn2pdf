@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 interface ScoreCanvasProps {
   hymnInfo: HymnPageBreakInfo;
   imageUrl: string;
-  imageData?: string; // 미리보기에서 로드된 이미지 데이터
+  loadedImage?: HTMLImageElement; // 미리보기에서 로드된 이미지 요소
   onAddBreakPoint: (y: number) => void;
   onRemoveBreakPoint: (id: string) => void;
 }
@@ -13,7 +13,7 @@ interface ScoreCanvasProps {
 export default function ScoreCanvas({ 
   hymnInfo, 
   imageUrl, 
-  imageData,
+  loadedImage,
   onAddBreakPoint, 
   onRemoveBreakPoint 
 }: ScoreCanvasProps) {
@@ -23,82 +23,70 @@ export default function ScoreCanvas({
   const [imageError, setImageError] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // imageData로부터 이미지 로드
-  const loadImageFromData = (dataUrl: string) => {
+  // loadedImage로부터 이미지 로드
+  const loadImageFromElement = (img: HTMLImageElement) => {
     if (!canvasRef.current) return;
     
-    const img = new Image();
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext('2d');
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      // 캔버스 성능 최적화 설정
+      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingQuality = 'low';
       
-      if (canvas && ctx) {
-        // 캔버스 성능 최적화 설정
-        ctx.imageSmoothingEnabled = false;
-        ctx.imageSmoothingQuality = 'low';
-        
-        // 이미지 크기 계산 (모바일 최적화)
-        const maxWidth = window.innerWidth > 768 ? 1200 : 800;
-        const maxHeight = window.innerWidth > 768 ? 1600 : 1000;
-        
-        let { width, height } = img;
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width = Math.floor(width * ratio);
-          height = Math.floor(height * ratio);
-        }
-        
-        // 캔버스 크기 설정
-        canvas.width = width;
-        canvas.height = height;
-        
-        // 이미지 그리기
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // 성공 상태 설정
-        setImageLoaded(true);
-        setImageError(false);
-        
-        // 타임아웃 정리
-        if (loadingTimeout) {
-          clearTimeout(loadingTimeout);
-          setLoadingTimeout(null);
-        }
-        
-        console.log('ScoreCanvas: imageData로 로드 완료');
+      // 이미지 크기 계산 (모바일 최적화)
+      const maxWidth = window.innerWidth > 768 ? 1200 : 800;
+      const maxHeight = window.innerWidth > 768 ? 1600 : 1000;
+      
+      let { naturalWidth: width, naturalHeight: height } = img;
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.floor(width * ratio);
+        height = Math.floor(height * ratio);
       }
-    };
-    
-    img.onerror = () => {
-      console.error('ScoreCanvas: imageData 로드 실패');
-      setImageError(true);
-      setImageLoaded(false);
-    };
-    
-    img.src = dataUrl;
+      
+      // 캔버스 크기 설정
+      canvas.width = width;
+      canvas.height = height;
+      
+      // 이미지 그리기
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // 성공 상태 설정
+      setImageLoaded(true);
+      setImageError(false);
+      
+      // 타임아웃 정리
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+        setLoadingTimeout(null);
+      }
+      
+      console.log('ScoreCanvas: loadedImage로 로드 완료');
+    }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     // 이미지 URL이 변경될 때 상태 리셋
     console.log('ScoreCanvas: 이미지 URL 변경됨:', imageUrl);
     console.log('ScoreCanvas: 현재 화면 크기:', window.innerWidth, 'x', window.innerHeight);
-    console.log('ScoreCanvas: imageData 존재 여부:', !!imageData);
+    console.log('ScoreCanvas: loadedImage 존재 여부:', !!loadedImage);
     
     setImageLoaded(false);
     setImageError(false);
     
-         // imageData가 있으면 바로 로드
-     if (imageData && canvasRef.current) {
-       console.log('ScoreCanvas: imageData로 바로 로드 시작');
-       console.log('ScoreCanvas: imageData 길이:', imageData.length);
-       console.log('ScoreCanvas: imageData 시작 부분:', imageData.substring(0, 50));
-       loadImageFromData(imageData);
-       return;
-     } else {
-       console.log('ScoreCanvas: imageData 없음 또는 canvasRef 없음');
-       console.log('ScoreCanvas: imageData 존재 여부:', !!imageData);
-       console.log('ScoreCanvas: canvasRef 존재 여부:', !!canvasRef.current);
-     }
+    // loadedImage가 있으면 바로 로드
+    if (loadedImage && canvasRef.current) {
+      console.log('ScoreCanvas: loadedImage로 바로 로드 시작');
+      console.log('ScoreCanvas: loadedImage 크기:', loadedImage.naturalWidth, 'x', loadedImage.naturalHeight);
+      loadImageFromElement(loadedImage);
+      return;
+    } else {
+      console.log('ScoreCanvas: loadedImage 없음 또는 canvasRef 없음');
+      console.log('ScoreCanvas: loadedImage 존재 여부:', !!loadedImage);
+      console.log('ScoreCanvas: canvasRef 존재 여부:', !!canvasRef.current);
+    }
     
     // 기존 타임아웃 정리
     if (loadingTimeout) {
@@ -120,7 +108,7 @@ export default function ScoreCanvas({
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [imageUrl, imageData]);
+  }, [imageUrl, loadedImage]);
 
   const handleImageLoad = () => {
     console.log('ScoreCanvas: 이미지 로드 시작');

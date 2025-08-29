@@ -18,7 +18,7 @@ interface PageBreakModalProps {
   onClose: () => void;
   hymnInfo: HymnPageBreakInfo | null;
   onConfirm: (hymnInfo: HymnPageBreakInfo) => void;
-  imageData?: string; // 미리보기에서 로드된 이미지 데이터 (base64)
+  loadedImage?: HTMLImageElement; // 미리보기에서 로드된 이미지 요소
 }
 
 export default function PageBreakModal({ 
@@ -26,7 +26,7 @@ export default function PageBreakModal({
   onClose, 
   hymnInfo, 
   onConfirm,
-  imageData
+  loadedImage
 }: PageBreakModalProps) {
   const [localHymnInfo, setLocalHymnInfo] = useState<HymnPageBreakInfo | null>(null);
 
@@ -83,13 +83,13 @@ export default function PageBreakModal({
         <div className="flex flex-1 overflow-hidden">       
           <div className="flex-1 p-4 overflow-auto">
             
-            <ScoreCanvas 
-              hymnInfo={localHymnInfo}
-              imageUrl={hymnInfo.imageUrl}
-              imageData={imageData}
-              onAddBreakPoint={handleAddBreakPoint}
-              onRemoveBreakPoint={handleRemoveBreakPoint}
-            />
+                         <ScoreCanvas 
+               hymnInfo={localHymnInfo}
+               imageUrl={hymnInfo.imageUrl}
+               loadedImage={loadedImage}
+               onAddBreakPoint={handleAddBreakPoint}
+               onRemoveBreakPoint={handleRemoveBreakPoint}
+             />
           </div>
         </div>
 

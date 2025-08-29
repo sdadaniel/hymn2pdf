@@ -23,32 +23,13 @@ export default function HymnPreview({
   const [currentHymnInfo, setCurrentHymnInfo] = useState<HymnPageBreakInfo | null>(null);
   const [hymnImageData, setHymnImageData] = useState<Map<string, string>>(new Map());
 
-  // 이미지를 캔버스 데이터로 변환
-  const generateCanvasData = (hymnId: string, img: HTMLImageElement) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    if (ctx) {
-      // 캔버스 크기 설정 (미리보기용으로 작게)
-      const maxHeight = 200;
-      const aspectRatio = img.naturalWidth / img.naturalHeight;
-      const canvasHeight = Math.min(img.naturalHeight, maxHeight);
-      const canvasWidth = canvasHeight * aspectRatio;
-      
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-      
-      // 이미지 그리기
-      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-      
-             // 캔버스 데이터를 base64로 변환하여 저장
-       const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-       setHymnImageData(prev => new Map(prev).set(hymnId, dataUrl));
-       
-       console.log(`HymnPreview: ${hymnId} 캔버스 데이터 생성 완료`);
-       console.log(`HymnPreview: ${hymnId} 데이터 길이:`, dataUrl.length);
-       console.log(`HymnPreview: ${hymnId} 데이터 시작 부분:`, dataUrl.substring(0, 50));
-    }
+    // 이미지 로드 상태 추적
+  const [loadedImages, setLoadedImages] = useState<Map<string, HTMLImageElement>>(new Map());
+
+  // 이미지 로드 완료 시 상태 저장
+  const handleImageLoaded = (hymnId: string, img: HTMLImageElement) => {
+    setLoadedImages(prev => new Map(prev).set(hymnId, img));
+    console.log(`HymnPreview: ${hymnId} 이미지 로드 완료, 크기:`, img.naturalWidth, 'x', img.naturalHeight);
   };
 
   // 페이지 자르기 모달 열기
@@ -104,8 +85,8 @@ export default function HymnPreview({
                        skeleton.classList.add('hidden');
                      }
                      
-                     // 캔버스 데이터 생성 및 저장
-                     generateCanvasData(hymn.id, target);
+                                           // 이미지 로드 완료 상태 저장
+                      handleImageLoaded(hymn.id, target);
                    }}
                    onError={(e) => {
                      const target = e.target as HTMLImageElement;
@@ -197,11 +178,11 @@ export default function HymnPreview({
 
              {/* 페이지 자르기 모달 */}
        {showPageBreakModal && currentHymnInfo && (() => {
-         const imageData = hymnImageData.get(currentHymnInfo.hymnId);
-         console.log('HymnPreview: 모달 열기 시 imageData 전달');
+         const loadedImage = loadedImages.get(currentHymnInfo.hymnId);
+         console.log('HymnPreview: 모달 열기 시 loadedImage 전달');
          console.log('HymnPreview: hymnId:', currentHymnInfo.hymnId);
-         console.log('HymnPreview: imageData 존재 여부:', !!imageData);
-         console.log('HymnPreview: imageData 길이:', imageData?.length || 0);
+         console.log('HymnPreview: loadedImage 존재 여부:', !!loadedImage);
+         console.log('HymnPreview: loadedImage 크기:', loadedImage ? `${loadedImage.naturalWidth}x${loadedImage.naturalHeight}` : '없음');
          
          return (
            <PageBreakModal
@@ -209,7 +190,7 @@ export default function HymnPreview({
              onClose={() => setShowPageBreakModal(false)}
              hymnInfo={currentHymnInfo}
              onConfirm={handlePageBreakConfirm}
-             imageData={imageData}
+             loadedImage={loadedImage}
            />
          );
        })()}
