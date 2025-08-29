@@ -56,14 +56,38 @@ export default function HymnPreview({
               className="group cursor-pointer"
               onClick={() => openPageBreakModal(hymn)}
             >
-              {/* 썸네일 이미지 */}
-              <div className="relative mb-2">
-                <img
-                  src={hymn.imageUrl}
-                  alt={`찬미가 ${hymn.number}장`}
-                  className="w-full object-contain rounded-lg border-2 border-gray-200 group-hover:border-blue-400 transition-colors"
-                  style={{ maxHeight: '200px' }}
-                />
+                             {/* 썸네일 이미지 */}
+               <div className="relative mb-2">
+                 <img
+                   src={hymn.imageUrl}
+                   alt={`찬미가 ${hymn.number}장`}
+                   className="w-full object-contain rounded-lg border-2 border-gray-200 group-hover:border-blue-400 transition-colors opacity-0 transition-opacity duration-300"
+                   style={{ maxHeight: '200px' }}
+                   onLoad={(e) => {
+                     const target = e.target as HTMLImageElement;
+                     target.classList.remove('opacity-0');
+                     target.classList.add('opacity-100');
+                     
+                     // 스켈레톤 숨기기
+                     const skeleton = target.parentElement?.querySelector('.skeleton-image');
+                     if (skeleton) {
+                       skeleton.classList.add('hidden');
+                     }
+                   }}
+                   onError={(e) => {
+                     const target = e.target as HTMLImageElement;
+                     target.style.display = 'none';
+                     const skeleton = target.parentElement?.querySelector('.skeleton-image');
+                     if (skeleton) {
+                       skeleton.classList.remove('hidden');
+                     }
+                   }}
+                 />
+                 
+                 {/* 스켈레톤 이미지 */}
+                 <div className="skeleton-image absolute inset-0 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center">
+                   <div className="text-gray-400 text-sm">로딩 중...</div>
+                 </div>
                 
                 {/* 자르기 포인트 표시 */}
                 {hasCustomBreaks && customBreakInfo && customBreakInfo.breakPoints.length > 0 && (
