@@ -160,8 +160,8 @@ export const downloadPDF = async (hymns: HymnItem[], hymnPageBreakInfos: Map<str
         console.log(`Successfully added hymn ${hymn.number} to PDF`);
 
         // 마지막 찬미가가 아니면 새 페이지 추가
-        // 긴 악보이고 여러 페이지로 분할된 경우는 이미 새 페이지가 추가되었으므로 추가로 페이지를 만들지 않음
-        if (i < hymns.length - 1 && !(isLongScore && pages.length > 1)) {
+        // 긴 악보의 경우 마지막 페이지에서 다음 찬미가와 구분하기 위해 페이지 추가
+        if (i < hymns.length - 1) {
           pdf.addPage();
         }
       } catch (error) {
@@ -233,6 +233,11 @@ const downloadImage = async (
       hymnPageBreakInfos,
       undefined // 이미지 다운로드의 경우 pageWidth는 필요 없음
     );
+    
+    console.log(`Image download for hymn ${hymnId}: isLongScore=${isLongScore}, pages.length=${pages.length}`);
+    if (pages.length > 1) {
+      console.log('Pages info:', pages.map(p => ({ pageNumber: p.pageNumber, totalPages: p.totalPages })));
+    }
     
     if (isLongScore && pages.length > 1) {
       // 긴 악보이고 여러 페이지로 분할된 경우에만 각 페이지별로 JPG로 변환하여 다운로드

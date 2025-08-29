@@ -102,8 +102,12 @@ export const splitImageForPDF = async (
     const breakPoints = customBreakInfo.breakPoints;
     const pages = [];
     
+    console.log(`Custom break points found: ${breakPoints.length} points`);
+    console.log('Break points:', breakPoints.map(bp => ({ y: bp.y })));
+    
     // 첫 페이지 (시작 ~ 첫 번째 자르기 포인트)
     const firstPageHeight = breakPoints[0].y;
+    console.log(`Creating first page: height=${firstPageHeight}, img.height=${img.height}`);
     const firstCanvas = document.createElement('canvas');
     const firstCtx = firstCanvas.getContext('2d');
     firstCanvas.width = img.width;
@@ -137,6 +141,7 @@ export const splitImageForPDF = async (
       const startY = breakPoints[i].y;
       const endY = i < breakPoints.length - 1 ? breakPoints[i + 1].y : img.height;
       const pageHeight = endY - startY;
+      console.log(`Creating page ${i + 2}: startY=${startY}, endY=${endY}, pageHeight=${pageHeight}`);
       
       const pageCanvas = document.createElement('canvas');
       const pageCtx = pageCanvas.getContext('2d');
@@ -167,6 +172,7 @@ export const splitImageForPDF = async (
       });
     }
     
+    console.log(`Total pages created: ${pages.length}`);
     return { isLongScore: true, pages };
   } else {
     // 자동 분할하지 않음 - 원본 이미지를 1장으로 처리
