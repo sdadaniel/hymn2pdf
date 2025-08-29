@@ -91,7 +91,8 @@ export const splitImageForPDF = async (
   margin: number, 
   contentHeight: number, 
   hymnId?: string,
-  hymnPageBreakInfos?: Map<string, HymnPageBreakInfo>
+  hymnPageBreakInfos?: Map<string, HymnPageBreakInfo>,
+  pageWidth?: number // PDF 페이지 전체 너비 추가
 ): Promise<{ isLongScore: boolean; pages: PDFPageInfo[] }> => {
   // 사용자 정의 자르기 포인트가 있는지 확인
   const customBreakInfo = hymnId && hymnPageBreakInfos ? hymnPageBreakInfos.get(hymnId) : null;
@@ -116,9 +117,9 @@ export const splitImageForPDF = async (
     
     const firstPageBase64 = firstCanvas.toDataURL('image/jpeg', IMAGE_QUALITY);
     const firstPageImgHeight = (firstPageHeight * imgWidth) / img.width;
-    // 중앙 상단 정렬: Y는 margin, X는 가로 중앙
+    // 상단 정렬: Y는 margin (위쪽 여백 최소화), X는 가로 중앙
     const firstPageY = margin;
-    const firstPageX = margin + (imgWidth - firstPageImgHeight) / 2;
+    const firstPageX = pageWidth ? margin + (pageWidth - (margin * 2) - imgWidth) / 2 : margin;
     
     pages.push({
       base64: firstPageBase64,
@@ -150,9 +151,9 @@ export const splitImageForPDF = async (
       
       const pageBase64 = pageCanvas.toDataURL('image/jpeg', IMAGE_QUALITY);
       const pageImgHeight = (pageHeight * imgWidth) / img.width;
-      // 중앙 상단 정렬: Y는 margin, X는 가로 중앙
+      // 상단 정렬: Y는 margin (위쪽 여백 최소화), X는 가로 중앙
       const pageY = margin;
-      const pageX = margin + (imgWidth - pageImgHeight) / 2;
+      const pageX = pageWidth ? margin + (pageWidth - (margin * 2) - imgWidth) / 2 : margin;
       
       pages.push({
         base64: pageBase64,
@@ -170,9 +171,9 @@ export const splitImageForPDF = async (
   } else {
     // 자동 분할하지 않음 - 원본 이미지를 1장으로 처리
     const finalImgHeight = (img.height * imgWidth) / img.width;
-    // 중앙 상단 정렬: Y는 margin, X는 가로 중앙
+    // 상단 정렬: Y는 margin (위쪽 여백 최소화), X는 가로 중앙
     const y = margin;
-    const x = margin + (imgWidth - finalImgHeight) / 2;
+    const x = pageWidth ? margin + (pageWidth - (margin * 2) - imgWidth) / 2 : margin;
     
     return { 
       isLongScore: false,
@@ -237,4 +238,44 @@ export const calculateImagePositionForPDF = (
   const y = margin;
   
   return { x, y };
+};
+
+// PDF에서 이미지를 최대한 크게 표시하기 위한 크기 계산 함수
+export const calculateOptimalImageSizeForPDF = (
+  originalWidth: number,
+  originalHeight: number,
+  pageWidth: number,
+  pageHeight: number,
+  margin: number
+) => {
+  // 페이지에서 여백을 제외한 사용 가능한 영역
+  const availableWidth = pageWidth - (margin * 2);
+  const availableHeight = pageHeight - (margin * 2);
+  
+  // 이미지 비율
+  const imageAspectRatio = originalWidth / originalHeight;
+  const pageAspectRatio = availableWidth / availableHeight;
+  
+  let finalWidth, finalHeight;
+  
+  if (imageAspectRatio > pageAspectRatio) {
+    // 이미지가 더 가로로 긴 경우 - 너비에 맞춤
+    finalWidth = availableWidth;
+    finalHeight = availableWidth / imageAspectRatio;
+  } else {
+    // 이미지가 더 세로로 긴 경우 - 높이에 맞춤
+    finalHeight = availableHeight;
+    finalWidth = availableHeight * imageAspectRatio;
+  }
+  
+  // 가로는 중앙 정렬, 세로는 상단에 가깝게 배치 (위쪽 여백 최소화)
+  const x = margin + (availableWidth - finalWidth) / 2;
+  const y = margin; // 상단 여백만 적용하여 위쪽 여백 최소화
+  
+  return {
+    width: finalWidth,
+    height: finalHeight,
+    x,
+    y
+  };
 };

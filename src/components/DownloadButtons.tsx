@@ -13,7 +13,7 @@ import {
   PDF_MARGIN
 } from '@/utils/constants';
 import { sendHymnDownloadGAEvent } from '@/utils/hymnDownloadAnalytics';
-import { processImage, splitImageForPDF } from '@/utils/imageProcessor';
+import { calculateOptimalImageSizeForPDF, processImage, splitImageForPDF } from '@/utils/imageProcessor';
 import { GA_FORMATS, HymnItem, HymnPageBreakInfo } from '@/utils/type';
 import jsPDF from 'jspdf';
 import { useState } from 'react';
@@ -87,7 +87,8 @@ export default function DownloadButtons({ hymns, hymnPageBreakInfos }: DownloadB
         IMAGE_DOWNLOAD_MARGIN, 
         IMAGE_DOWNLOAD_HEIGHT, 
         hymnId,
-        hymnPageBreakInfos
+        hymnPageBreakInfos,
+        undefined // 이미지 다운로드의 경우 pageWidth는 필요 없음
       );
       
       if (isLongScore && pages.length > 1) {
@@ -191,15 +192,16 @@ export default function DownloadButtons({ hymns, hymnPageBreakInfos }: DownloadB
           // 공통 이미지 처리 함수 사용
           const { canvas, img } = await processImage(blob);
           
-          // 공통 이미지 분할 함수 사용
-          const { isLongScore, pages } = await splitImageForPDF(
-            img, 
-            contentWidth, 
-            margin, 
-            contentHeight, 
-            hymn.id,
-            hymnPageBreakInfos
-          );
+                // 공통 이미지 분할 함수 사용
+      const { isLongScore, pages } = await splitImageForPDF(
+        img, 
+        contentWidth, 
+        margin, 
+        contentHeight, 
+        hymn.id,
+        hymnPageBreakInfos,
+        pageWidth
+      );
           
           if (isLongScore && pages.length > 1) {
             // 긴 악보이고 여러 페이지로 분할된 경우에만 각 페이지별로 PDF에 추가
@@ -207,17 +209,19 @@ export default function DownloadButtons({ hymns, hymnPageBreakInfos }: DownloadB
               const page = pages[i];
               
               if (page.base64) {
-                // 이미지 크기와 위치를 정확하게 계산
-                const imageWidth = Math.min(page.width, contentWidth);
-                const imageHeight = page.height;
+                // 새로운 최적화 함수를 사용하여 이미지 크기와 위치 계산
+                const optimalSize = calculateOptimalImageSizeForPDF(
+                  page.width,
+                  page.height,
+                  pageWidth,
+                  pageHeight,
+                  margin
+                );
+                console.log('optimalSize', optimalSize);
                 
-                // PDF에 이미지 추가 시 정확한 위치 계산
-                // 가로 중앙 정렬, 세로는 상단에서 margin만큼
-                const x = margin + (contentWidth - imageWidth) / 2;
-                const y = margin;
-                
-                pdf.addImage(page.base64, 'JPEG', x, y, imageWidth, imageHeight);
+                pdf.addImage(page.base64, 'JPEG', optimalSize.x, optimalSize.y, optimalSize.width, optimalSize.height);
               }
+              
               
               // 페이지 번호 추가
               pdf.setFontSize(PDF_FONT_SIZE);
@@ -242,16 +246,16 @@ export default function DownloadButtons({ hymns, hymnPageBreakInfos }: DownloadB
             // 짧은 악보이거나 자르기 포인트가 없는 경우 1장에 그대로 추가
             const correctedBase64 = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
             
-            // 이미지 크기와 위치를 정확하게 계산
-            const imageWidth = Math.min(pages[0].width, contentWidth);
-            const imageHeight = pages[0].height;
+            // 새로운 최적화 함수를 사용하여 이미지 크기와 위치 계산
+            const optimalSize = calculateOptimalImageSizeForPDF(
+              pages[0].width,
+              pages[0].height,
+              pageWidth,
+              pageHeight,
+              margin
+            );
             
-            // PDF에 이미지 추가 시 정확한 위치 계산
-            // 가로 중앙 정렬, 세로는 상단에서 margin만큼
-            const x = margin + (contentWidth - imageWidth) / 2;
-            const y = margin;
-            
-            pdf.addImage(correctedBase64, 'JPEG', x, y, imageWidth, imageHeight);
+            pdf.addImage(correctedBase64, 'JPEG', optimalSize.x, optimalSize.y, optimalSize.width, optimalSize.height);
             
             // 페이지 번호 추가
             pdf.setFontSize(PDF_FONT_SIZE);
