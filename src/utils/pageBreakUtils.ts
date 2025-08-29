@@ -80,9 +80,9 @@ export const calculateImageCoordinates = (
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
   
-  // Canvas와 이미지 크기 비율 계산
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
+  // ✅ 정확한 스케일링 계산: 원본 이미지 크기 vs Canvas 크기
+  const scaleX = imageRef.naturalWidth / canvas.width;
+  const scaleY = imageRef.naturalHeight / canvas.height;
   
   // 실제 이미지 좌표로 변환
   const actualX = x * scaleX;
@@ -117,11 +117,11 @@ export const calculateImageCoordinates = (
     width: imageRef.width,
     height: imageRef.height
   });
-  console.log('계산 과정:', {
+  console.log('✅ 수정된 스케일링 계산:', {
     canvasX: x,
     canvasY: y,
-    scaleX,
-    scaleY,
+    scaleX: `${scaleX} (${imageRef.naturalWidth} / ${canvas.width})`,
+    scaleY: `${scaleY} (${imageRef.naturalHeight} / ${canvas.height})`,
     actualX,
     actualY
   });
