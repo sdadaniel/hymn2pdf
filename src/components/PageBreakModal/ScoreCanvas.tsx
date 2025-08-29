@@ -1,4 +1,4 @@
-import { calculateImageCoordinates, drawImageOnCanvas } from '@/utils/pageBreakUtils';
+import { calculateImageCoordinates } from '@/utils/pageBreakUtils';
 import { HymnPageBreakInfo } from '@/utils/type';
 import { useEffect, useRef, useState } from 'react';
 
@@ -20,13 +20,53 @@ export default function ScoreCanvas({
   const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    setImageLoaded(false);
-  }, [imageUrl]);
+    // 이미지 URL이 변경될 때만 로딩 상태 리셋
+    if (imageRef.current) {
+      setImageLoaded(false);
+      
+      // 10초 후에도 로딩이 안 되면 강제로 진행
+      const timeout = setTimeout(() => {
+        if (!imageLoaded) {
+          console.warn('이미지 로딩 타임아웃, 강제 진행');
+          setImageLoaded(true);
+        }
+      }, 10000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [imageUrl, imageLoaded]);
 
   const handleImageLoad = () => {
-    setImageLoaded(true);
     if (imageRef.current && canvasRef.current) {
-      drawImageOnCanvas(canvasRef.current, imageRef.current);
+      const img = imageRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      
+      if (ctx) {
+        // 캔버스 성능 최적화 설정
+        ctx.imageSmoothingEnabled = false;
+        ctx.imageSmoothingQuality = 'low';
+        
+                 // 이미지 크기 계산 (모바일 최적화)
+         const maxWidth = window.innerWidth > 768 ? 1200 : 800; // 모바일에서는 더 작게
+         const maxHeight = window.innerWidth > 768 ? 1600 : 1000;
+         
+         let { width, height } = img;
+         if (width > maxWidth || height > maxHeight) {
+           const ratio = Math.min(maxWidth / width, maxHeight / height);
+           width = Math.floor(width * ratio);
+           height = Math.floor(height * ratio);
+         }
+        
+        // 캔버스 크기 설정
+        canvas.width = width;
+        canvas.height = height;
+        
+        // 이미지 그리기 (최적화된 크기로)
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        setImageLoaded(true);
+      }
     }
   };
 
@@ -55,7 +95,11 @@ export default function ScoreCanvas({
         
         {!imageLoaded && (
           <div className="w-96 h-64 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-            <div className="text-gray-500">이미지 로딩 중...</div>
+            <div className="text-gray-500 flex flex-col items-center gap-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <div>이미지 처리 중...</div>
+              <div className="text-xs text-gray-400">잠시만 기다려주세요</div>
+            </div>
           </div>
         )}
         
@@ -98,14 +142,19 @@ export default function ScoreCanvas({
         })}
       </div>
 
-      {/* 숨겨진 이미지 (로딩용) */}
-      <img
-        ref={imageRef}
-        src={imageUrl}
-        alt={`찬미가 ${hymnInfo.hymnNumber}장`}
-        onLoad={handleImageLoad}
-        className="hidden"
-      />
+             {/* 숨겨진 이미지 (로딩용) */}
+       <img
+         ref={imageRef}
+         src={imageUrl}
+         alt={`찬미가 ${hymnInfo.hymnNumber}장`}
+         onLoad={handleImageLoad}
+         onError={() => {
+           console.error('이미지 로딩 실패:', imageUrl);
+           // 에러 발생 시에도 모달은 열리도록 처리
+           setImageLoaded(true);
+         }}
+         className="hidden"
+       />
     </div>
   );
 }
