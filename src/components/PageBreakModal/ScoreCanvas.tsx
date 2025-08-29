@@ -63,7 +63,27 @@ export default function ScoreCanvas({
         setLoadingTimeout(null);
       }
       
-      console.log('ScoreCanvas: loadedImage로 로드 완료');
+      console.log('=== ScoreCanvas loadImageFromElement 상세 로그 ===');
+      console.log('원본 이미지 크기:', {
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight
+      });
+      console.log('최적화된 크기:', {
+        maxWidth,
+        maxHeight,
+        finalWidth: width,
+        finalHeight: height
+      });
+      console.log('캔버스 크기:', {
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height
+      });
+      console.log('화면 크기:', {
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        isMobile: window.innerWidth <= 768
+      });
+      console.log('========================================');
     }
   };
 
@@ -166,16 +186,40 @@ export default function ScoreCanvas({
     const referenceImage = loadedImage || imageRef.current;
     if (!referenceImage) return;
     
+    console.log('=== ScoreCanvas 클릭 이벤트 상세 로그 ===');
+    console.log('Canvas 상태:', {
+      imageLoaded,
+      imageError,
+      canvasRefExists: !!canvasRef.current
+    });
+    console.log('참조 이미지 정보:', {
+      isLoadedImage: !!loadedImage,
+      isImageRef: !!imageRef.current,
+      referenceImageNaturalSize: `${referenceImage.naturalWidth}x${referenceImage.naturalHeight}`,
+      referenceImageDisplaySize: `${referenceImage.width}x${referenceImage.height}`
+    });
+    console.log('Canvas 요소 정보:', {
+      canvasWidth: canvasRef.current.width,
+      canvasHeight: canvasRef.current.height,
+      canvasOffsetWidth: canvasRef.current.offsetWidth,
+      canvasOffsetHeight: canvasRef.current.offsetHeight
+    });
+    
     const coordinates = calculateImageCoordinates(e, canvasRef.current, referenceImage);
     if (coordinates) {
-      console.log('ScoreCanvas: 클릭 좌표 계산 결과:', {
+      console.log('ScoreCanvas: 최종 좌표 계산 결과:', {
         clickY: e.clientY,
+        clickPageY: e.pageY,
         canvasRect: canvasRef.current.getBoundingClientRect(),
         imageSize: `${referenceImage.naturalWidth}x${referenceImage.naturalHeight}`,
-        calculatedY: coordinates.y
+        calculatedY: coordinates.y,
+        calculatedX: coordinates.x
       });
       onAddBreakPoint(coordinates.y);
+    } else {
+      console.log('ScoreCanvas: 좌표 계산 실패');
     }
+    console.log('========================================');
   };
 
   return (
