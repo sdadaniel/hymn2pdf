@@ -42,8 +42,9 @@ export default function HymnPreview({
       <h3 className="text-lg font-semibold text-gray-700 mb-3">페이지 미리보기</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {hymns.map((hymn) => {
-          const hasCustomBreaks = hymnPageBreakInfos.has(hymn.id);
           const customBreakInfo = hymnPageBreakInfos.get(hymn.id);
+          // 실제로 breakPoints가 설정되어 있는지 확인
+          const hasCustomBreaks = customBreakInfo && customBreakInfo.breakPoints && customBreakInfo.breakPoints.length > 0;
           // 이미지 높이가 1800px 이상이면 검토필요 (breakpoint 설정 여부와 무관)
           const needsReview = customBreakInfo && customBreakInfo.originalHeight > 1800;
           
